@@ -20,7 +20,7 @@ Stack: Python 3.9+, Flask, vanilla JavaScript (no frontend build). Production ru
 | **Target hosting** | NVIDIA GitLab group (org repo — **transfer pending**) |
 | **Production target** | ITSS Linux VM + HTTPS + SSO (see below) |
 | **Optional legacy lab URL** | http://10.110.33.21:4281/ (Spark — not required for new deploys) |
-| **SSO in code** | **Not implemented** — document-only; see [docs/SSO.md](docs/SSO.md) |
+| **SSO in code** | **Scaffold shipped** (`SSO_ENABLED=false` default); see [docs/SSO.md](docs/SSO.md) |
 
 **Original author:** Riddhi Gaddamwar  
 **Maintainer:** TBD (NVIDIA Platform/Lab team)
@@ -39,7 +39,7 @@ Lab default BMC credentials and security notes: [SECURITY.md](SECURITY.md).
 6. **Deploy** following [DEPLOYMENT.md](DEPLOYMENT.md) (clone from org repo, venv, systemd, nginx).
 7. **Validate internal access** per [KB0029440](https://nvidia.service-now.com/esc?id=kb_article&sysparm_article=KB0029440).
 8. **Rotate/limit Spark credentials** if `deploy/push_to_spark.py` is still used.
-9. **Implement OIDC middleware** (future PR) using env vars in [`.env.example`](.env.example).
+9. **Enable SSO** on production VM (`SSO_ENABLED=true` + OIDC vars) after ITSS registration — [HANDOFF_NOW.md](HANDOFF_NOW.md).
 
 Full list of non-automatable steps: [MANUAL_STEPS.md](MANUAL_STEPS.md).
 
@@ -54,7 +54,9 @@ Full list of non-automatable steps: [MANUAL_STEPS.md](MANUAL_STEPS.md).
 | `backend/` | Fleet Health API, config loader |
 | `config/mgx_arc/` | `systems.yaml`, `profiles.yaml` |
 | `deploy/mgx-arc-gui.service` | systemd unit template |
-| `deploy/install_on_spark.sh` | First-time install script (works on any Linux systemd host) |
+| `deploy/install_on_vm.sh` | ITSS VM install (gunicorn localhost + systemd) |
+| `deploy/install_on_spark.sh` | Legacy Spark/lab install script |
+| `HANDOFF_NOW.md` | Today's browser + deploy checklist |
 | `.env.example` | All documented environment variables |
 
 ---

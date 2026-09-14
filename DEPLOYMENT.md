@@ -29,7 +29,7 @@ For local development, see [README.md](README.md). For handoff ownership tasks, 
 
 - The GUI proxies Redfish/SSH from the VM; the VM must reach BMC management IPs.
 - Do **not** expose BMC ports to the public internet.
-- Browser SSO (OIDC) is documented in [docs/SSO.md](docs/SSO.md) — **implement in a follow-up PR**.
+- Browser SSO (OIDC) scaffold ships env-gated (`SSO_ENABLED=false` default) — [docs/SSO.md](docs/SSO.md).
 
 ---
 
@@ -79,10 +79,10 @@ See [`.env.example`](.env.example) for the full variable list.
 
 ```bash
 cd /opt/mgx-arc-gui
-APP_DIR=/opt/mgx-arc-gui PORT=4281 SERVICE_USER="$USER" bash deploy/install_on_spark.sh
+APP_DIR=/opt/mgx-arc-gui PORT=4281 SERVICE_USER="$USER" bash deploy/install_on_vm.sh
 ```
 
-The script rsyncs the tree, creates `.venv`, installs gunicorn, installs `deploy/mgx-arc-gui.service`, and starts systemd.
+The script rsyncs the tree, creates `.venv`, installs gunicorn, binds to `127.0.0.1:4281`, installs `deploy/mgx-arc-gui.service`, and starts systemd. For legacy Spark hosts, use `deploy/install_on_spark.sh` instead.
 
 ### 4. Load secrets via systemd (optional)
 
@@ -122,43 +122,13 @@ Production binds gunicorn to `127.0.0.1:4281` when nginx terminates TLS (adjust 
 
 1. Request an **internal TLS certificate** via [ServiceNow](https://nvidia.service-now.com/esc?id=sc_cat_item&sys_id=855c03ad97efed50275ef7300153af0b) for your VM hostname.
 2. Install cert + key (paths vary by IT process).
-3. Configure nginx for TLS termination and WebSocket support (scope VNC uses `/ws`):
+3. Configure nginx from the example config (TLS termination + WebSocket for scope VNC):
 
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name mgx-arc-gui.example.nvidia.com;
-
-    ssl_certificate     /etc/ssl/certs/mgx-arc-gui.crt;
-    ssl_certificate_key /etc/ssl/private/mgx-arc-gui.key;
-
-    client_max_body_size 512m;   # firmware uploads
-
-    location / {
-        proxy_pass http://127.0.0.1:4281;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 900s;
-        proxy_send_timeout 900s;
-    }
-
-    location /ws {
-        proxy_pass http://127.0.0.1:4281;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_read_timeout 86400;
-    }
-}
-
-server {
-    listen 80;
-    server_name mgx-arc-gui.example.nvidia.com;
-    return 301 https://$host$request_uri;
-}
+```bash
+sudo cp deploy/nginx-mgx-arc.conf.example /etc/nginx/sites-available/mgx-arc-gui
+# Edit server_name and ssl_certificate paths, then:
+sudo ln -sf /etc/nginx/sites-available/mgx-arc-gui /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
 Update `mgx-arc-gui.service` `ExecStart` bind to `127.0.0.1:4281` when nginx is in front.

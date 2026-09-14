@@ -1,5 +1,6 @@
 Flask==3.0.3
 flask-sock==0.7.0
+Authlib==1.4.0
 requests==2.32.3
 paramiko==3.4.1
 gunicorn>=22.0.0

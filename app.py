@@ -37,6 +37,7 @@ from flask_sock import Sock
 from requests.auth import HTTPBasicAuth
 
 from backend.api import initialize_arc_api
+from backend.sso import init_sso
 
 # BMCs use self-signed certificates on the management network.
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -354,6 +355,7 @@ sock = Sock(app)
 # app.js while the server runs new routes shows confusing 404s. Always revalidate.
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 arc_api = initialize_arc_api(app)
+init_sso(app)
 
 _scope_vnc_tokens = {}
 _scope_vnc_tokens_lock = threading.Lock()

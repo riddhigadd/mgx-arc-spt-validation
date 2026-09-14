@@ -1,0 +1,59 @@
+# MGX ARC GUI — nginx reverse proxy (HTTPS termination)
+#
+# 1. Request internal TLS cert via ServiceNow (see MANUAL_STEPS.md).
+# 2. Replace mgx-arc-gui.example.nvidia.com and cert paths below.
+# 3. Install:
+#      sudo cp deploy/nginx-mgx-arc.conf.example /etc/nginx/sites-available/mgx-arc-gui
+#      sudo ln -sf /etc/nginx/sites-available/mgx-arc-gui /etc/nginx/sites-enabled/
+#      sudo nginx -t && sudo systemctl reload nginx
+#
+# Gunicorn must bind 127.0.0.1:4281 (see deploy/install_on_vm.sh).
+
+upstream mgx_arc_gui {
+    server 127.0.0.1:4281;
+    keepalive 8;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name mgx-arc-gui.example.nvidia.com;
+
+    ssl_certificate     /etc/ssl/certs/mgx-arc-gui.crt;
+    ssl_certificate_key /etc/ssl/private/mgx-arc-gui.key;
+
+    # Internal NVIDIA TLS — adjust ciphers per org policy if required.
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    client_max_body_size 512m;   # firmware uploads
+
+    location / {
+        proxy_pass http://mgx_arc_gui;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+        proxy_read_timeout 900s;
+        proxy_send_timeout 900s;
+    }
+
+    # Scope VNC WebSocket proxy
+    location /ws {
+        proxy_pass http://mgx_arc_gui;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400;
+    }
+}
+
+server {
+    listen 80;
+    server_name mgx-arc-gui.example.nvidia.com;
+    return 301 https://$host$request_uri;
+}

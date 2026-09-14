@@ -2,7 +2,7 @@
 
 This document describes how to protect the MGX ARC GUI with **NVIDIA SSO** (Azure AD) using **OIDC Authorization Code flow with PKCE** — the standard pattern for internal web applications.
 
-> **Integration status:** SSO middleware is **not implemented in the application code yet**. Today the GUI relies on network placement (VPN/lab LAN) and BMC credential validation. Follow the manual registration steps below, then add a future PR to enforce OIDC at the Flask layer (see [Where to wire auth](#where-to-wire-auth-in-flask)).
+> **Integration status:** An **env-gated OIDC scaffold** ships in `backend/sso.py` (`SSO_ENABLED=false` by default). Lab/Spark deploys work unchanged. After ITSS app registration, set `SSO_ENABLED=true` and OIDC vars in `.env` — see [HANDOFF_NOW.md](../HANDOFF_NOW.md).
 
 ---
 
@@ -51,30 +51,30 @@ Copy placeholders from [`.env.example`](../.env.example) on the server:
 | `OIDC_AUTHORITY` | e.g. `https://login.microsoftonline.com/<tenant-id>` |
 | `OIDC_REDIRECT_URI` | Must match ITSS registration |
 | `OIDC_SCOPES` | e.g. `openid profile email` |
-| `OIDC_REQUIRE_AUTH` | Future flag: reject requests without valid session |
+| `SSO_ENABLED` | Master switch (`false` default; set `true` after ITSS registration) |
+| `SECRET_KEY` | Flask session signing key (required when SSO enabled) |
 
 Do **not** commit real values. Store in `/opt/mgx-arc-gui/.env` or a systemd `EnvironmentFile`.
 
 ---
 
-## 4. Where to wire auth in Flask
+## 4. Application wiring (implemented)
 
-Suggested integration points (future PR):
+| Component | Behavior |
+| --------- | -------- |
+| `backend/sso.py` | Authlib OIDC + PKCE; `/oauth2/login`, `/oauth2/callback`, `/oauth2/logout` |
+| `app.py` | Calls `init_sso(app)` after blueprint registration |
+| `wsgi.py` | Unchanged — gunicorn loads `wsgi:app` |
+| nginx | TLS termination; proxy to `127.0.0.1:4281` — see `deploy/nginx-mgx-arc.conf.example` |
 
-1. **`app.py`** — after `app = Flask(...)`, register an `@app.before_request` handler that:
-   - Allows static assets and the OAuth callback path without a session.
-   - Redirects unauthenticated browser requests to the OIDC authorize URL (PKCE code challenge).
-   - Validates ID/access tokens on callback and stores user identity in a signed server-side session (Flask `session` + `SECRET_KEY` from env).
+When `SSO_ENABLED=true`:
 
-2. **`wsgi.py`** — no change required if middleware lives in `app.py`; gunicorn loads `wsgi:app`.
+- Static assets and `/oauth2/*` are public.
+- Unauthenticated browser requests → redirect to NVIDIA login.
+- `/api/*` without session → `401 JSON`.
+- Session cookies: `Secure`, `HttpOnly`, `SameSite=Lax`.
 
-3. **nginx** — terminate TLS; proxy to gunicorn on `127.0.0.1:4281`. Optionally add `auth_request` only if using nginx-level OIDC; Flask middleware is simpler for this app.
-
-Libraries commonly used: `Authlib` or `msal` + `requests`. Follow NVIDIA security review for session cookies (`Secure`, `HttpOnly`, `SameSite`).
-
-4. **API routes** — decide policy for `/api/bmc` and `/api/arc`:
-   - **Recommended:** require the same OIDC session for all browser-initiated API calls; reject cross-origin anonymous use.
-   - BMC credentials in headers remain separate (Direct Connect); SSO protects *who can open the GUI*, not BMC auth.
+BMC credentials in API headers remain separate; SSO controls *who can open the GUI*.
 
 ---
 
