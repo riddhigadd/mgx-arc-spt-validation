@@ -1,68 +1,65 @@
-# Deploying MGX ARC GUI to Spark
+# Deploying MGX ARC GUI
 
-Canonical procedure for installing and updating the **shared team instance** on DGX Spark.
+Guide for running the GUI on **any Linux server** (lab VM, workstation, DGX, cloud instance, etc.) with a persistent systemd service.
 
-| Item | Value |
-| ---- | ----- |
-| **Production URL** | http://10.110.33.21:4281/ |
-| **Spark host** | `10.110.33.21` |
+| Item | Typical value |
+| ---- | ------------- |
+| **Listen port** | `4281` (production) or `4282` (dev) |
 | **Service name** | `mgx-arc-gui` |
-| **Listen port** | `4281` |
 | **GitHub repo** | https://github.com/riddhigadd/mgx-arc-spt-validation |
-
-The team always uses the production URL above. Do not ask users to run localhost copies.
 
 ---
 
 ## Architecture
 
 ```
-[ Team browsers ]
+[ Browsers on your network ]
         │
-        │  lab network / VPN / Tailscale
+        │  lab LAN / VPN / Tailscale
         ▼
-[ DGX Spark @ 10.110.33.21 — mgx-arc-gui :4281 ]
+[ Your server — mgx-arc-gui :PORT ]
         │
         │  BMC management network
         ▼
 [ MGX ARC BMCs ]
 ```
 
-- One shared GUI instance on Spark proxies Redfish/SSH to BMCs.
-- Code changes flow: **Git PR → merge → deploy to Spark → users refresh browser**.
-- BMC ports are never exposed to the public internet.
+- The GUI proxies Redfish/SSH to BMCs from the server where it runs.
+- The server must have network reachability to your BMC management IPs.
+- BMC ports should never be exposed to the public internet.
 
 ---
 
-## Prerequisites
-
-### On Spark (first install)
-
-- Ubuntu / DGX OS with Python 3.9+
-- Network reachability to BMC management IPs
-- Sudo access for systemd install
-
-### On maintainer machine (push updates)
-
-- Clone of this repo at the merged commit
-- SSH credentials via environment variables (never commit):
-
-| Variable | Default | Purpose |
-| -------- | ------- | ------- |
-| `SPARK_HOST` | `10.110.33.21` | Target Spark IP |
-| `SPARK_USER` | *(required)* | SSH username (e.g. `sgaddamwar`) |
-| `SPARK_PASSWORD` | *(required)* | SSH password |
-| `SPARK_APP_DIR` | `/home/<user>/MGXARC-GUI-RIDDHI` | Install path on Spark |
-
----
-
-## First-time install
-
-SSH to Spark and clone the repo (if not already present):
+## Quick start (development)
 
 ```bash
-git clone https://github.com/riddhigadd/mgx-arc-spt-validation.git ~/MGXARC-GUI-RIDDHI
-cd ~/MGXARC-GUI-RIDDHI
+git clone https://github.com/riddhigadd/mgx-arc-spt-validation.git
+cd mgx-arc-spt-validation
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
+
+Open **http://localhost:4282/** (default dev port).
+
+---
+
+## Production install (systemd + gunicorn)
+
+### Prerequisites
+
+- Linux host with Python 3.9+
+- Network reachability to BMC management IPs
+- Sudo access for systemd install (optional but recommended)
+
+### First-time install on the server
+
+SSH to your server and clone the repo:
+
+```bash
+git clone https://github.com/riddhigadd/mgx-arc-spt-validation.git ~/mgx-arc-gui
+cd ~/mgx-arc-gui
 git checkout main
 bash deploy/install_on_spark.sh
 ```
@@ -73,36 +70,103 @@ Custom paths / port:
 APP_DIR=/opt/mgx-arc-gui PORT=4281 bash deploy/install_on_spark.sh
 ```
 
-`install_on_spark.sh` will:
+> **Note:** `install_on_spark.sh` was written for a lab DGX Spark but works on any Linux host with systemd.
+
+The script will:
 
 1. Rsync the project to `APP_DIR`
 2. Create a Python venv and install `requirements.txt` + gunicorn
 3. Install and enable the `mgx-arc-gui` systemd unit
-4. Start the service on `0.0.0.0:4281`
+4. Start the service on `0.0.0.0:$PORT`
+
+### Manual systemd setup
+
+If you prefer to configure systemd yourself:
+
+```bash
+cd /path/to/mgx-arc-gui
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt gunicorn
+
+# Test gunicorn manually
+PORT=4281 gunicorn -w 2 -b 0.0.0.0:4281 app:app
+```
+
+Create `/etc/systemd/system/mgx-arc-gui.service`:
+
+```ini
+[Unit]
+Description=MGX ARC GUI
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+WorkingDirectory=/path/to/mgx-arc-gui
+Environment=PORT=4281
+ExecStart=/path/to/mgx-arc-gui/.venv/bin/gunicorn -w 2 -b 0.0.0.0:4281 app:app
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable mgx-arc-gui
+sudo systemctl start mgx-arc-gui
+```
+
+### Environment variables on the server
+
+Set Fleet Health credentials and other secrets via systemd drop-in or `/etc/environment`:
+
+| Variable | Purpose |
+| -------- | ------- |
+| `PORT` | Listen port (default `4281` in systemd install) |
+| `MGX_ARC_BMC_USERNAME` | Fleet Health BMC username |
+| `MGX_ARC_BMC_PASSWORD` | Fleet Health BMC password |
+| `MGX_ARC_HOST_USERNAME` | OS host SSH username |
+| `MGX_ARC_HOST_PASSWORD` | OS host SSH password |
 
 ---
 
-## Routine update (after PR merge)
+## Routine update (after git pull)
 
-From your maintainer workstation, with latest `main` checked out:
+On the server:
+
+```bash
+cd /path/to/mgx-arc-gui
+git pull origin main
+source .venv/bin/activate
+pip install -r requirements.txt
+sudo systemctl restart mgx-arc-gui
+```
+
+### Remote push from a workstation (optional)
+
+If you have SSH access to a remote server, use the included SFTP deploy helper:
 
 ```powershell
 # PowerShell
-$env:SPARK_HOST = "10.110.33.21"
-$env:SPARK_USER = "sgaddamwar"
+$env:SPARK_HOST = "<your-server-ip>"
+$env:SPARK_USER = "<ssh-user>"
 $env:SPARK_PASSWORD = "<from secret store>"
 python deploy/push_to_spark.py
 ```
 
 ```bash
 # Bash
-export SPARK_HOST=10.110.33.21
-export SPARK_USER=sgaddamwar
+export SPARK_HOST=<your-server-ip>
+export SPARK_USER=<ssh-user>
 export SPARK_PASSWORD='<from secret store>'
 python3 deploy/push_to_spark.py
 ```
 
-### Push specific files only
+Push specific files only:
 
 ```powershell
 python deploy/push_to_spark.py static/index.html static/js/app.js app.py
@@ -115,13 +179,13 @@ python deploy/push_to_spark.py static/index.html static/js/app.js app.py
 3. Runs `sudo systemctl restart mgx-arc-gui`
 4. Checks `systemctl is-active mgx-arc-gui`
 
-Default file set (when no arguments given) is listed in `DEFAULT_FILES` inside `push_to_spark.py` — includes `app.py`, front-end assets, backend config, and JSON maps.
+Default file set (when no arguments given) is listed in `DEFAULT_FILES` inside `push_to_spark.py`.
 
 ---
 
 ## Verify deployment
 
-### On Spark
+### On the server
 
 ```bash
 systemctl is-active mgx-arc-gui          # expect: active
@@ -132,14 +196,14 @@ sudo journalctl -u mgx-arc-gui -n 50 --no-pager
 ### From your laptop
 
 ```bash
-curl -I http://10.110.33.21:4281/
+curl -I http://<server-ip>:4281/
 ```
 
-Open **http://10.110.33.21:4281/** in a browser, hard-refresh (Ctrl+F5), connect to a test BMC, and spot-check changed tabs.
+Open the URL in a browser, hard-refresh (Ctrl+F5), connect to a test BMC, and spot-check changed tabs.
 
 ---
 
-## Service management (on Spark)
+## Service management
 
 ```bash
 sudo systemctl status mgx-arc-gui
@@ -150,12 +214,26 @@ sudo journalctl -u mgx-arc-gui -f
 
 ---
 
+## Firewall
+
+Allow the GUI port only on trusted networks:
+
+```bash
+# Example with ufw — restrict to lab subnet
+sudo ufw allow from 10.0.0.0/8 to any port 4281
+sudo ufw enable
+```
+
+Do not expose port 4281 to the public internet without VPN, Tailscale, or a controlled tunnel. See [REMOTE_ACCESS.md](REMOTE_ACCESS.md).
+
+---
+
 ## Full reinstall vs incremental push
 
 | Scenario | Command |
 | -------- | ------- |
-| New Spark host or corrupted install | `bash deploy/install_on_spark.sh` on Spark |
-| Normal post-merge update | `python deploy/push_to_spark.py` from maintainer machine |
+| New host or corrupted install | `bash deploy/install_on_spark.sh` on the server |
+| Normal post-merge update | `git pull` + `systemctl restart`, or `python deploy/push_to_spark.py` |
 | Dependency change | Include `requirements.txt` in push (default set does) |
 | Fleet config only | `python deploy/push_to_spark.py config/mgx_arc/profiles.yaml` |
 
@@ -163,7 +241,7 @@ sudo journalctl -u mgx-arc-gui -f
 
 ## Remote access
 
-If `10.110.33.21` is not directly reachable, use NVIDIA VPN, Tailscale, or another approved path — still targeting port **4281** on the Spark host. See [REMOTE_ACCESS.md](REMOTE_ACCESS.md).
+If the server is not directly reachable, use VPN, Tailscale, or another private path. See [REMOTE_ACCESS.md](REMOTE_ACCESS.md).
 
 ---
 
@@ -171,18 +249,32 @@ If `10.110.33.21` is not directly reachable, use NVIDIA VPN, Tailscale, or anoth
 
 | Symptom | Check |
 | ------- | ----- |
-| Browser cannot reach `:4281` | VPN/Tailscale, firewall (`ufw`), Spark IP |
-| Service inactive after push | `journalctl -u mgx-arc-gui`; Python import errors in log |
-| UI looks stale after deploy | Hard refresh (Ctrl+F5); confirm `index.html` / `app.js` were pushed |
-| BMC connect fails from GUI | Spark can `ping`/SSH the BMC IP; GUI is a proxy |
-| Permission denied on SFTP | `SPARK_APP_DIR` writable by `SPARK_USER` |
+| Browser cannot reach `:4281` | VPN/Tailscale, firewall (`ufw`), server IP |
+| Service inactive after restart | `journalctl -u mgx-arc-gui`; Python import errors in log |
+| UI looks stale after deploy | Hard refresh (Ctrl+F5); confirm `index.html` / `app.js` were updated |
+| BMC connect fails from GUI | Server can `ping`/SSH the BMC IP; GUI is a proxy |
+| Permission denied on SFTP | `SPARK_APP_DIR` writable by SSH user |
 
 ---
 
 ## Security reminders
 
-- Never commit `SPARK_PASSWORD` or BMC credentials.
+- Never commit SSH passwords or BMC credentials.
 - Do not expose BMC SSH/Redfish to WAN.
-- The Spark GUI (`:4281`) is the **only** supported entry point for the team.
+- Restrict GUI port access to trusted networks.
 
 See [SECURITY.md](../SECURITY.md).
+
+---
+
+## Optional example: DGX Spark lab host
+
+One NVIDIA lab runs a shared instance for convenience:
+
+| Item | Value |
+| ---- | ----- |
+| **Example URL** | http://10.110.33.21:4281/ |
+| **Host** | `10.110.33.21` |
+| **Default `SPARK_HOST`** | `10.110.33.21` in `push_to_spark.py` |
+
+This is **one optional hosted copy**, not a requirement. You can deploy entirely on your own hardware using the same procedures above with your server's IP and credentials.

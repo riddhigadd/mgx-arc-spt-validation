@@ -306,19 +306,6 @@ code {
   line-height: 1.5;
   text-align: center;
 }
-.login-official {
-  margin: 10px 0 0;
-  padding: 0 12px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.4;
-  text-align: center;
-}
-.login-official a {
-  color: var(--accent-dim, var(--accent));
-  text-decoration: none;
-}
-.login-official a:hover { text-decoration: underline; }
 .login-card { width: 100%; max-width: 420px; margin: 0; text-align: left; }
 .connect-fields-stack { display: flex; flex-direction: column; gap: 14px; }
 .connect-fields-stack label {

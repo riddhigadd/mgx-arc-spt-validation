@@ -4,18 +4,14 @@ This guide covers practical ways to change the look, tabs, API routes, and lab c
 
 ## Deployment model
 
-All customizations happen **in this Git repository** and are deployed to the **shared Spark instance**:
-
-**http://10.110.33.21:4281/**
-
-Workflow:
+Customizations happen **in this Git repository**. Test them locally or on your own server, then deploy wherever you run the GUI:
 
 1. Edit files locally (or in a fork).
-2. Open a pull request and get it merged to `main`.
-3. A maintainer deploys to Spark with `deploy/push_to_spark.py` or `deploy/install_on_spark.sh` ([deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)).
-4. The team hard-refreshes the browser to pick up changes.
+2. Run `python app.py` to smoke-test, or deploy to your server ([deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)).
+3. Open a pull request if contributing upstream.
+4. Hard-refresh the browser to pick up front-end changes.
 
-**Do not** run a separate local GUI instance for team use. One shared Spark deployment is the official product.
+You are not tied to any specific host. Deploy on your laptop, a lab VM, or any server with BMC network access.
 
 ## Theme & styling (`static/css/style.css`)
 
@@ -46,11 +42,7 @@ All visual tokens are CSS custom properties on `:root`:
 
 Fleet Health Console styles are separate in `static/css/health-console.css`.
 
-After CSS changes, deploy the updated files to Spark:
-
-```powershell
-python deploy/push_to_spark.py static/css/style.css static/css/health-console.css
-```
+After CSS changes, restart the app or redeploy the updated files to your server.
 
 ## Page structure (`static/index.html`)
 
@@ -77,7 +69,7 @@ Each tab needs a matching panel:
 <div id="panel-power" class="tab-panel hidden"></div>
 ```
 
-Front-end changes (`index.html`, `app.js`, CSS) must be deployed together — see `DEFAULT_FILES` in `deploy/push_to_spark.py`.
+Front-end changes (`index.html`, `app.js`, CSS) should be deployed together — see `DEFAULT_FILES` in `deploy/push_to_spark.py` if using the SFTP deploy helper.
 
 ## Tabs & loaders (`static/js/app.js`)
 
@@ -106,7 +98,7 @@ loaders[name](panel);
 2. Add `<div id="panel-mytab" class="tab-panel hidden"></div>`.
 3. Implement `async function loadMyTab(panel) { ... }` in `app.js`.
 4. Register `mytab: loadMyTab` in the `loaders` object.
-5. Deploy `static/index.html` and `static/js/app.js` to Spark.
+5. Restart or redeploy `static/index.html` and `static/js/app.js`.
 
 Loaders typically call `apiFetch("/api/bmc/...")` and render into `panel` using `el()` helpers. Use `withLoader(panel, fn)` for the standard loading spinner (NVIDIA eye animation).
 
@@ -139,7 +131,7 @@ Register the route near related endpoints in `app.py`. Reuse `_ssh_connect`, `_r
 
 For fleet/config-driven features, add routes to `backend/api.py` (Blueprint `/api/arc`) and implement logic in `backend/services/`.
 
-After backend changes, deploy `app.py` and any touched `backend/` files, then restart the service (handled automatically by `push_to_spark.py`).
+After backend changes, restart the app or redeploy `app.py` and any touched `backend/` files.
 
 ## USB golden map (`usb_golden_map.json`)
 
@@ -151,11 +143,7 @@ Structure:
 - Each view has a tree of nodes (`id`, `name`, `vid`, `pid`, `children`).
 - Used when a profile does not explicitly set `usb.golden_map` in YAML.
 
-Edit this file to match your board's golden USB inventory. Do not put credentials here. Deploy with:
-
-```powershell
-python deploy/push_to_spark.py usb_golden_map.json
-```
+Edit this file to match your board's golden USB inventory. Do not put credentials here.
 
 ## I2C configuration
 
@@ -176,7 +164,7 @@ Add mux entries only when you have a board-approved BMC selection command.
 
 ### `systems.yaml`
 
-Defines fleet targets: BMC/OS hosts, credential refs, capability profile, and expected profile. Replace `TODO_MGX_ARC_*` placeholders with your lab values on the Spark server (via env vars for secrets).
+Defines fleet targets: BMC/OS hosts, credential refs, capability profile, and expected profile. Replace `TODO_MGX_ARC_*` placeholders with your lab values on your server (via env vars for secrets).
 
 ### `profiles.yaml`
 
@@ -214,7 +202,7 @@ Change these for your environment. Users always enter credentials at login for B
 - `MGX_ARC_FIRMWARE_PARTS` in `app.py` — flash metadata and expected image filenames.
 - `fw_commands.example.json` — example per-part discovery commands.
 
-Run `python discover_firmware.py <BMC_IP>` on Spark (or a maintainer machine with BMC access) to probe a live system before updating mappings.
+Run `python discover_firmware.py <BMC_IP>` on a machine with BMC network access to probe a live system before updating mappings.
 
 ## Assets
 

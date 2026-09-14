@@ -4,15 +4,44 @@ A web dashboard for connecting to and managing **MGX ARC** systems. The app is a
 
 Built with **Flask** (Python) and **vanilla JavaScript** — no frontend build step required.
 
-## Access the GUI (team use)
+## Quick start (local or any server)
 
-**Everyone uses the shared Spark-hosted instance:**
+Clone the repo, create a virtual environment, install dependencies, and run:
 
-**http://10.110.33.21:4281/**
+```powershell
+git clone https://github.com/riddhigadd/mgx-arc-spt-validation.git
+cd mgx-arc-spt-validation
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python app.py
+```
 
-Open that URL in your browser, enter the BMC address and credentials, and connect. You do **not** need to install or run anything on your laptop for normal BMC work.
+```bash
+git clone https://github.com/riddhigadd/mgx-arc-spt-validation.git
+cd mgx-arc-spt-validation
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
 
-> **Do not** run a separate local copy for day-to-day lab use. GUI changes go through this Git repository (PR → merge → deploy to Spark). See [CONTRIBUTING.md](CONTRIBUTING.md) and [deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md).
+Open **http://localhost:4282/** (default dev port), enter the BMC address and credentials, and connect.
+
+For production on a server, use **gunicorn** and a process manager (systemd). See **[deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)**.
+
+## Deploy anywhere
+
+You can run this GUI on:
+
+- Your **laptop** (development or personal use)
+- A **lab VM** or workstation
+- A **DGX Spark** or other server on your network
+- Any **Linux host** that can reach your BMC management network
+
+There is no requirement to use a shared or central host. Fork the repo, customize it, and deploy on the machine you choose.
+
+> **Example hosted instance:** One NVIDIA lab runs a shared copy at **http://10.110.33.21:4281/** — that is an optional convenience, not a requirement.
 
 ## Creator
 
@@ -32,81 +61,33 @@ See [AUTHORS](AUTHORS) for attribution details.
 - **USB / PCIe / KVM / Scope** — enumeration, inventory, console helpers, and optional lab-scope integration.
 - **Fleet Health Console** — configuration-driven health, inventory, and recovery workflows (`/api/arc`).
 
-## How changes reach production
+## Contributing workflow
 
 ```
-Contributor → GitHub PR → review & merge to main → maintainer deploys to Spark → team uses http://10.110.33.21:4281/
+Contributor → GitHub PR → review & merge to main → deploy on your host → users open your URL
 ```
 
 1. Fork, branch, and open a pull request ([CONTRIBUTING.md](CONTRIBUTING.md)).
-2. After merge, a maintainer deploys the updated code to the Spark host ([deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)).
-3. Users hard-refresh the browser (Ctrl+F5) to pick up front-end changes.
+2. Test locally with `python app.py` or deploy to your own server ([deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)).
+3. After merge, deploy updated code wherever you run the GUI and hard-refresh the browser (Ctrl+F5) for front-end changes.
 
-## Maintainer / developer deploy (Spark only)
+## Production deployment
 
-Local `python app.py` on a laptop is **not** the supported workflow for team use. It exists only for maintainers who need to update the **shared Spark server**.
+For a persistent server install (systemd, gunicorn, firewall, `PORT` env var):
 
-### First-time install on Spark
+**[deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)**
 
-SSH to the DGX Spark (`10.110.33.21`), clone this repo, and run:
+### Environment variables
 
-```bash
-cd ~/MGXARC-GUI-RIDDHI   # or your clone path
-bash deploy/install_on_spark.sh
-```
-
-This installs a systemd service (`mgx-arc-gui`) listening on `0.0.0.0:4281`.
-
-Full procedure: **[deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)**
-
-### Push updates after merge
-
-From a maintainer machine with repo access and deploy credentials:
-
-```powershell
-$env:SPARK_HOST = "10.110.33.21"
-$env:SPARK_USER = "sgaddamwar"
-$env:SPARK_PASSWORD = "<from env or secret store>"
-python deploy/push_to_spark.py
-```
-
-Or push specific files:
-
-```powershell
-python deploy/push_to_spark.py static/index.html static/js/app.js app.py
-```
-
-Credentials (`SPARK_USER`, `SPARK_PASSWORD`, etc.) are read from the environment only — never commit them. See `deploy/push_to_spark.py`.
-
-### Local dev (maintainers only)
-
-If you need to smoke-test before deploying, you may run locally on your machine — but **do not** share a localhost URL with the team:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python app.py
-```
-
-This listens on `http://localhost:4282/` by default. Use it only for pre-deploy validation, then push changes to Spark via the deploy scripts above.
-
-## Configuration & environment variables
-
-Configuration applies to the **Spark server**, not end-user laptops.
-
-### Fleet Health Console (`config/mgx_arc/`)
-
-For the configuration-driven **Fleet Health** mode, set credentials via environment variables on Spark (never in YAML):
-
-| Variable | Purpose |
-| -------- | ------- |
-| `MGX_ARC_BMC_USERNAME` | BMC SSH / Redfish username |
-| `MGX_ARC_BMC_PASSWORD` | BMC password |
-| `MGX_ARC_HOST_USERNAME` | OS host SSH username |
-| `MGX_ARC_HOST_PASSWORD` | OS host SSH password |
-| `MGX_ARC_CONFIG_DIR` | Override config directory (default: `config/mgx_arc/`) |
-| `MGX_ARC_DATA_DIR` | Override snapshot/store data directory |
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `PORT` | `4282` (dev) / `4281` (systemd) | Listen port |
+| `MGX_ARC_BMC_USERNAME` | — | Fleet Health BMC username |
+| `MGX_ARC_BMC_PASSWORD` | — | Fleet Health BMC password |
+| `MGX_ARC_HOST_USERNAME` | — | OS host SSH username |
+| `MGX_ARC_HOST_PASSWORD` | — | OS host SSH password |
+| `MGX_ARC_CONFIG_DIR` | `config/mgx_arc/` | Override config directory |
+| `MGX_ARC_DATA_DIR` | — | Override snapshot/store data directory |
 
 See [config/mgx_arc/README.md](config/mgx_arc/README.md) for `systems.yaml`, `profiles.yaml`, and placeholder (`TODO_MGX_ARC_*`) workflow.
 
@@ -116,13 +97,13 @@ The Direct Connect login validates BMC credentials server-side. Default lab Open
 
 Other optional tuning variables include `FLASH_UPLOAD_TIMEOUT`, `BMC_UPDATE_TIMEOUT`, `I2C_CMD_TIMEOUT`, and `SCOPE_*` settings (documented in `app.py`).
 
-## Remote access to Spark
+## Remote access
 
-If you cannot reach `10.110.33.21` directly, use NVIDIA VPN, Tailscale, or another approved path to the Spark host — still opening **http://10.110.33.21:4281/** (or the Spark's reachable IP on port 4281). See **[deploy/REMOTE_ACCESS.md](deploy/REMOTE_ACCESS.md)**.
+If your GUI host is not directly reachable from your laptop, use VPN, Tailscale, or another private path to the server running the app. See **[deploy/REMOTE_ACCESS.md](deploy/REMOTE_ACCESS.md)**.
 
 ## Customizing the GUI
 
-Theme colors, tabs, API routes, I2C/USB maps, and fleet profiles are customized in this repo and redeployed to Spark. See **[CUSTOMIZATION.md](CUSTOMIZATION.md)**.
+Theme colors, tabs, API routes, I2C/USB maps, and fleet profiles are customized in this repo. Test locally or on your server, then deploy wherever you run the GUI. See **[CUSTOMIZATION.md](CUSTOMIZATION.md)**.
 
 ## Contributing
 
@@ -139,7 +120,7 @@ static/
   css/style.css           Theme (CSS variables)
   js/app.js               Direct Connect tabs & API calls
   js/health-console.js    Fleet Health Console
-deploy/                   Spark install, deploy, and remote access docs
+deploy/                   Server install, deploy scripts, and remote access docs
 firmware_images/          Local firmware binaries (gitignored)
 usb_golden_map.json       USB topology golden references
 i2c_bus_map.json          I2C bus names and mux paths
@@ -148,9 +129,9 @@ i2c_expected_devices.json Expected I2C device addresses
 
 ## Firmware images
 
-Place `.bin`, `.fwpkg`, and `.image` files in `firmware_images/` on the Spark host for one-click flashing. Large binaries are **gitignored** — see [firmware_images/README.txt](firmware_images/README.txt) for expected filenames.
+Place `.bin`, `.fwpkg`, and `.image` files in `firmware_images/` on the host running the GUI for one-click flashing. Large binaries are **gitignored** — see [firmware_images/README.txt](firmware_images/README.txt) for expected filenames.
 
-Run `python discover_firmware.py <BMC_IP>` from the Spark (or a maintainer machine with BMC access) to probe a live BMC and map firmware inventory IDs.
+Run `python discover_firmware.py <BMC_IP>` from a machine with BMC network access to probe a live BMC and map firmware inventory IDs.
 
 ## License
 
@@ -161,7 +142,6 @@ This project is released under the [MIT License](LICENSE).
 **This is a lab / BMC management tool.** It is intended for use on trusted management networks with authorized hardware.
 
 - **Do not** expose BMC management ports (SSH, Redfish) to the public internet.
-- **Do not** run ad-hoc local GUI copies for team use — use the shared Spark instance.
 - **Do not** commit real passwords, `.env` files, or deploy credentials to version control.
 
 See [SECURITY.md](SECURITY.md) for responsible use and secret handling.

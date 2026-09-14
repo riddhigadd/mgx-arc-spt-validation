@@ -1,10 +1,6 @@
-# Remote access to the shared MGX ARC GUI
+# Remote access to MGX ARC GUI
 
-## Official team URL
-
-**http://10.110.33.21:4281/**
-
-Everyone uses this Spark-hosted instance. Do not run or share localhost copies for team use.
+How to reach the GUI when it runs on a server that is not directly on your local network.
 
 Install and update procedures: **[DEPLOYMENT.md](DEPLOYMENT.md)**
 
@@ -15,39 +11,43 @@ Install and update procedures: **[DEPLOYMENT.md](DEPLOYMENT.md)**
 ```
 [ Your laptop anywhere ]
         │
-        │  NVIDIA VPN  or  Tailscale  or  lab LAN
+        │  VPN  or  Tailscale  or  lab LAN
         ▼
-[ DGX Spark @ 10.110.33.21 — mgx-arc-gui on port 4281 ]
+[ Your server — mgx-arc-gui on port PORT ]
         │
         │  lab / management network only
         ▼
-[ MGX ARC BMCs  e.g. 10.137.x.x ]
+[ MGX ARC BMCs  e.g. 10.x.x.x ]
 ```
 
-- The **GUI** runs on Spark, which can reach BMC IPs on the lab network.
-- Your browser talks to **Spark:4281**, never directly to BMCs from home.
+- The **GUI** runs on a server that can reach BMC IPs on the management network.
+- Your browser talks to **`<server>:PORT`**, not directly to BMCs from home.
 - Do **not** put BMC management ports (SSH/Redfish) on the public internet.
+
+Default ports: **4281** (production/systemd) or **4282** (`python app.py` dev mode).
 
 ---
 
-## Reach Spark from home / NVIDIA HQ / anywhere
+## Reach your GUI host
 
-### Option A — Lab or corp network (simplest)
+Replace `<server>` and `<port>` with your deployment's IP/hostname and listen port.
 
-If your laptop is on the same reachable network as `10.110.33.21`:
+### Option A — Same lab or corp network (simplest)
 
-Open **http://10.110.33.21:4281/**
+If your laptop is on the same reachable network as the server:
 
-### Option B — NVIDIA VPN
+Open **http://\<server\>:\<port\>/**
 
-1. Connect your laptop to **NVIDIA VPN**.
-2. Open **http://10.110.33.21:4281/** (or the Spark's corp IP on port 4281 if different).
+### Option B — Corporate VPN
 
-Works from home and HQ as long as VPN is up and the Spark IP is reachable.
+1. Connect your laptop to your organization's **VPN**.
+2. Open **http://\<server\>:\<port\>/**.
+
+Works from home and HQ as long as VPN is up and the server IP is reachable through the tunnel.
 
 ### Option C — Tailscale (private mesh)
 
-On the **DGX Spark**:
+On the **server**:
 
 ```bash
 curl -fsSL https://tailscale.com/install.sh | sh
@@ -57,16 +57,16 @@ tailscale ip -4
 
 On your **laptop**: install Tailscale, sign in with the same account/tailnet, then open:
 
-`http://<spark-tailscale-ip>:4281/`
+`http://<server-tailscale-ip>:<port>/`
 
-No public ports, no VPN split-tunnel fights, works from any Wi‑Fi.
+No public ports, no VPN split-tunnel issues, works from any Wi‑Fi.
 
 ### Option D — Cloudflare Tunnel (public HTTPS URL)
 
 Use only if you intentionally want a shareable HTTPS link and accept that anyone with the URL can hit the login page.
 
 ```bash
-# On the Spark (example)
+# On the server (example)
 cloudflared tunnel login
 cloudflared tunnel create mgx-arc-gui
 cloudflared tunnel route dns mgx-arc-gui mgx-arc-gui.example.com
@@ -78,12 +78,12 @@ Then open `https://mgx-arc-gui.example.com`.
 ### Avoid
 
 - Port-forwarding BMC networks to the public internet
-- Exposing `:4281` on a public WAN IP without VPN/Tailscale/tunnel + access control
-- Running `python app.py` on laptops and sharing localhost URLs with the team
+- Exposing the GUI port on a public WAN IP without VPN/Tailscale/tunnel + access control
+- Leaving BMC SSH/Redfish reachable from the internet
 
 ---
 
-## Maintainer: service checks on Spark
+## Service checks on the server
 
 ```bash
 sudo systemctl status mgx-arc-gui
@@ -100,11 +100,10 @@ Full deploy/update workflow: **[DEPLOYMENT.md](DEPLOYMENT.md)**
 
 | Check | Why |
 | ----- | --- |
-| Spark can `ping` / SSH the BMC IP | GUI is a proxy; it must reach BMCs |
+| Server can `ping` / SSH the BMC IP | GUI is a proxy; it must reach BMCs |
 | `systemctl is-active mgx-arc-gui` is `active` | Service stays up after reboot |
-| Laptop can open Spark:4281 via VPN, Tailscale, or lab LAN | Remote access path |
-| Firewall allows 4281 only to trusted nets / Tailscale | Don't leave it world-open |
-| Team bookmark is http://10.110.33.21:4281/ | Single shared instance |
+| Laptop can open `<server>:<port>` via VPN, Tailscale, or lab LAN | Remote access path works |
+| Firewall allows GUI port only to trusted nets / Tailscale | Don't leave it world-open |
 
 ---
 
@@ -112,7 +111,13 @@ Full deploy/update workflow: **[DEPLOYMENT.md](DEPLOYMENT.md)**
 
 ```bash
 # After VPN or Tailscale is connected:
-curl -I http://10.110.33.21:4281/
+curl -I http://<server>:4281/
 ```
 
-Then open that URL in a browser, connect with the BMC IP (e.g. `10.137.156.84`), and use the GUI as usual.
+Then open that URL in a browser, connect with the BMC IP, and use the GUI as usual.
+
+---
+
+## Optional example: NVIDIA lab Spark host
+
+One lab runs a shared instance at **http://10.110.33.21:4281/** for team convenience. The same remote-access options above apply — use VPN or Tailscale to reach `10.110.33.21` if you are not on the lab network. This is not required; deploy on your own host instead.
