@@ -2,10 +2,22 @@
 
 MGX ARC GUI manages baseboard management controllers (BMCs) on lab hardware. Treat it as **privileged infrastructure software**, not a public web application.
 
+## Single shared instance
+
+The team uses **one** Spark-hosted GUI:
+
+**http://10.110.33.21:4281/**
+
+- Do **not** run ad-hoc local copies for team use — changes must go through Git, merge, and deploy to Spark.
+- Do **not** expose BMC management ports (SSH, Redfish) to the public internet.
+- The Spark host on the lab/management network is the **only** supported GUI entry point for the team.
+
+See [deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md) for the canonical deploy procedure.
+
 ## Scope
 
 - The GUI proxies Redfish (HTTPS) and SSH from your browser session to BMCs and optional OS hosts.
-- Credentials are sent per request (Direct Connect) or resolved from environment variables (Fleet Health).
+- Credentials are sent per request (Direct Connect) or resolved from environment variables on Spark (Fleet Health).
 - BMC TLS certificates are not verified (lab self-signed certs).
 
 ## Never commit secrets
@@ -30,7 +42,7 @@ These are **not production secrets** — they are common defaults on lab OpenBMC
 
 1. Change `REQUIRED_BMC_USER` / `REQUIRED_BMC_PASSWORD` in `app.py` to match your authorized credentials, or refactor to environment variables.
 2. Update UI prefills in `app.js` if needed.
-3. Restrict network access to the GUI host.
+3. Restrict network access to the Spark GUI host.
 
 ## Network exposure
 
@@ -38,11 +50,11 @@ These are **not production secrets** — they are common defaults on lab OpenBMC
 
 | Safe | Unsafe |
 | ---- | ------ |
-| Run GUI on a host inside the lab management network | Port-forward BMC SSH/Redfish to WAN |
-| Access GUI via VPN, Tailscale, or controlled tunnel | Leave `:4281` / `:4282` open on a public IP |
-| Browser → GUI → BMC (proxy model) | Browser → BMC directly from untrusted networks |
+| Team → Spark GUI (`10.110.33.21:4281`) → BMC (proxy model) | Port-forward BMC SSH/Redfish to WAN |
+| Access Spark via VPN, Tailscale, or controlled tunnel | Leave BMC ports open on a public IP |
+| One maintained Spark deployment | Many unpatched localhost copies shared ad hoc |
 
-See [deploy/REMOTE_ACCESS.md](deploy/REMOTE_ACCESS.md) for DGX Spark deployment patterns.
+See [deploy/REMOTE_ACCESS.md](deploy/REMOTE_ACCESS.md) for reaching the Spark host remotely.
 
 ## Reporting vulnerabilities
 
@@ -52,6 +64,7 @@ If you discover a security issue, please report it privately to the repository m
 
 - [ ] Real passwords only in environment variables or runtime login — not in git
 - [ ] `.gitignore` excludes `.env`, firmware binaries, and deploy backups
-- [ ] GUI reachable only over trusted networks
+- [ ] Team uses the shared Spark URL — not localhost copies
+- [ ] GUI reachable only over trusted networks (VPN/Tailscale/lab LAN)
 - [ ] Lab default credentials reviewed/changed for your deployment
 - [ ] Firmware flash operations tested on authorized hardware only

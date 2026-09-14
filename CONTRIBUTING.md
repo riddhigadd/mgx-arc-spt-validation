@@ -2,11 +2,19 @@
 
 Thank you for helping improve the MGX ARC GUI. This project is a Flask + vanilla JavaScript web app with no frontend build step — keep changes simple and focused.
 
-## Getting started
+## Team access model
 
-1. **Fork** the repository on GitHub (once published).
+- **Users** always open the shared Spark instance: **http://10.110.33.21:4281/**
+- **Contributors** change code in Git, open a PR, and wait for merge.
+- **Maintainers** deploy merged changes to Spark ([deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)).
+
+Do **not** ask teammates to run `python app.py` on their laptops for daily BMC work. Do **not** distribute ad-hoc local copies of the GUI.
+
+## Getting started (contributors)
+
+1. **Fork** the repository: https://github.com/riddhigadd/mgx-arc-spt-validation
 2. **Clone** your fork locally.
-3. Create a **virtual environment** and install dependencies:
+3. Create a **virtual environment** and install dependencies (for local smoke-testing only):
 
    ```powershell
    python -m venv .venv
@@ -14,13 +22,13 @@ Thank you for helping improve the MGX ARC GUI. This project is a Flask + vanilla
    pip install -r requirements.txt
    ```
 
-4. Run locally:
+4. Optional — smoke-test locally before opening a PR (maintainers only; not for team use):
 
    ```powershell
    python app.py
    ```
 
-   Open http://localhost:4282/ and connect to a BMC you are authorized to use.
+   Opens http://localhost:4282/ on your machine. Connect to a BMC you are authorized to use. After validation, deploy via the maintainer workflow — do not share this localhost URL with the team.
 
 5. Create a **feature branch** from `main`:
 
@@ -32,8 +40,23 @@ Thank you for helping improve the MGX ARC GUI. This project is a Flask + vanilla
 
 - Keep PRs **focused** — one logical change per PR when possible.
 - Describe **what** changed and **why** in the PR body.
-- Test against a live BMC (or document why manual BMC testing was not possible).
+- Test against a live BMC (on Spark after deploy, or locally for pre-merge smoke tests) — document manual test steps when automated tests are not applicable.
 - Do not include unrelated refactors or formatting-only churn.
+
+## After your PR is merged
+
+1. A **maintainer** pulls the latest `main` and deploys to Spark:
+
+   ```powershell
+   $env:SPARK_HOST = "10.110.33.21"
+   $env:SPARK_USER = "sgaddamwar"
+   $env:SPARK_PASSWORD = "<from env>"
+   python deploy/push_to_spark.py
+   ```
+
+2. The team uses **http://10.110.33.21:4281/** — no action required on their laptops except a hard refresh (Ctrl+F5) if front-end files changed.
+
+See [deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md) for the full deploy and verification checklist.
 
 ## Code style
 
@@ -62,7 +85,7 @@ Match the existing codebase:
 ### YAML / JSON config
 
 - **Never** put passwords in YAML. Use `username_env` / `password_env` references only.
-- Lab placeholders use the `TODO_MGX_ARC_*` prefix — replace with real values locally; do not commit real hostnames or credentials.
+- Lab placeholders use the `TODO_MGX_ARC_*` prefix — replace with real values on Spark via env vars; do not commit real hostnames or credentials.
 
 ## What not to commit
 
@@ -87,7 +110,7 @@ pip install -r requirements.txt
 pytest
 ```
 
-Most features require a live MGX ARC BMC on the lab network. Document your manual test steps in the PR when automated tests are not applicable.
+Most features require a live MGX ARC BMC on the lab network. After deploy, verify on **http://10.110.33.21:4281/**. Document your manual test steps in the PR when automated tests are not applicable.
 
 ## Security
 
