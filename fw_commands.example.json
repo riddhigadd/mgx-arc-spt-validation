@@ -1,0 +1,70 @@
+[
+  {
+    "name": "BMC",
+    "command": ". /etc/os-release 2>/dev/null; echo \"${VERSION_ID:-$VERSION}\""
+  },
+  {
+    "name": "Host boot firmware (SBIOS/UEFI)",
+    "command": "replace-with-command-that-prints-sbios-or-uefi-version"
+  },
+  {
+    "name": "ERoT",
+    "command": "replace-with-command-that-prints-erot-version"
+  },
+  {
+    "name": "FPGA/SMR",
+    "command": "replace-with-command-that-prints-fpga-or-smr-version"
+  },
+  {
+    "name": "CX8 0",
+    "command": "replace-with-command-that-prints-cx8-0-version"
+  },
+  {
+    "name": "CX8 1",
+    "command": "replace-with-command-that-prints-cx8-1-version"
+  },
+  {
+    "name": "CX8 2",
+    "command": "replace-with-command-that-prints-cx8-2-version"
+  },
+  {
+    "name": "GPU VBIOS / GPU Firmware",
+    "command": "replace-with-command-that-prints-gpu-vbios-version"
+  },
+  {
+    "name": "GPU MCU",
+    "command": "replace-with-command-that-prints-gpu-mcu-version"
+  },
+  {
+    "name": "HPM MCU 0",
+    "command": "replace-with-command-that-prints-hpm-mcu-0-version"
+  },
+  {
+    "name": "HPM MCU 1",
+    "command": "replace-with-command-that-prints-hpm-mcu-1-version"
+  },
+  {
+    "name": "MCU FW",
+    "command": "replace-with-command-that-prints-mcu-fw-version"
+  },
+  {
+    "name": "MAC Provisioning FW",
+    "command": "replace-with-command-that-prints-mac-provisioning-fw-version"
+  },
+  {
+    "name": "SMA MCU 0",
+    "command": "replace-with-command-that-prints-sma-mcu-0-version"
+  },
+  {
+    "name": "SMA MCU 1",
+    "command": "replace-with-command-that-prints-sma-mcu-1-version"
+  },
+  {
+    "name": "HPM MCU",
+    "command": "replace-with-command-that-prints-hpm-mcu-version"
+  },
+  {
+    "name": "GPU MCU",
+    "command": "replace-with-command-that-prints-gpu-mcu-version"
+  }
+]

@@ -1,0 +1,174 @@
+version: 1
+
+capability_profiles:
+  mgx-arc-default:
+    redfish_power: true
+    graceful_shutdown: true
+    # PDU/AC cycle is still a blocked lab integration; WAT PowerCycling uses it
+    # outside this GUI.
+    ac_cycle: false
+    usb_sources: [bmc, host]
+    mctp: true
+    i2c: true
+    fru_redfish: true
+    fru_ipmi: false
+    # Keep false until every recovery placeholder is replaced and approved.
+    mcu_recovery: false
+
+profiles:
+  mgx-arc-2u2n:
+    # Trusted commands only. Shapes match ServiceContext.command() keys.
+    commands:
+      usb:
+        bmc: lsusb
+        host: lsusb
+      mctp: busctl tree xyz.openbmc_project.MCTP
+      i2c_health: >-
+        for b in 0 1 2 3 4 5 6 7 8 9 10 12 13 14 15 16 17; do echo "bus $b:"; i2cdetect -y $b || true; done
+      recovery: TODO_MGX_ARC_APPROVED_RECOVERY_COMMAND
+
+    usb:
+      # PowerCycling BMC_INV lsusb (aerial-mgx-evt-01 / mgx-arc, 2026-09-03)
+      bmc_expected:
+        - {vid: "1d6b", pid: "0002", label: "EHCI root hub"}
+        - {vid: "0424", pid: "2514", label: "USB2514 Hub-0/1/2"}
+        - {vid: "0955", pid: "ffff", label: "NVIDIA MCTP-USB"}
+        - {vid: "0955", pid: "cf11", label: "NVIDIA MCTP-USB/HID MCU"}
+      # PowerCycling OS_INV lsusb
+      host_expected:
+        - {vid: "1d6b", pid: "0002", label: "USB 2.0 root hub"}
+        - {vid: "1d6b", pid: "0003", label: "USB 3.0 root hub"}
+        - {vid: "0b95", pid: "1790", label: "ASIX AX88179"}
+        - {vid: "0403", pid: "6011", label: "FT4232H USB-UART"}
+        - {vid: "1d6b", pid: "0107", label: "USB Virtual Hub"}
+        - {vid: "0525", pid: "a4a2", label: "RNDIS gadget"}
+      # golden_map is supplied from usb_golden_map.json by the compatibility
+      # adapter when it is not explicitly populated here.
+
+    mctp:
+      expected_min_endpoints: 1
+      expected_bridges:
+        - TODO_MGX_ARC_MCTP_BRIDGE
+      notes:
+        - BMC lsusb -tv binds 0955:ffff and 0955:cf11 to mctp-usb; EID map still needs busctl capture.
+
+    i2c:
+      buses:
+        - name: BMC I2C-0
+          bus_number: 0
+          checks:
+            - {type: command, cmd: "i2cdetect -y 0"}
+          expected_addresses: ["0x10"]
+          recovery_actions: []
+        - name: BMC I2C-1
+          bus_number: 1
+          checks:
+            - {type: command, cmd: "i2cdetect -y 1"}
+          expected_addresses: ["0x0b", "0x11", "0x14", "0x60"]
+          recovery_actions: []
+        - name: BMC I2C-4
+          bus_number: 4
+          checks:
+            - {type: command, cmd: "i2cdetect -y 4"}
+          expected_addresses: ["0x50", "0x57", "0x6f"]
+          recovery_actions: []
+        - name: BMC I2C-5
+          bus_number: 5
+          checks:
+            - {type: command, cmd: "i2cdetect -y 5"}
+          expected_addresses: ["0x20", "0x50", "0x70", "0x71", "0x72"]
+          recovery_actions: []
+        - name: BMC I2C-6
+          bus_number: 6
+          checks:
+            - {type: command, cmd: "i2cdetect -y 6"}
+          expected_addresses: ["0x20", "0x24", "0x50"]
+          recovery_actions: []
+        - name: BMC I2C-7
+          bus_number: 7
+          checks:
+            - {type: command, cmd: "i2cdetect -y 7"}
+          expected_addresses: ["0x18", "0x53", "0x6a", "0x73"]
+          recovery_actions: []
+        - name: BMC I2C-8
+          bus_number: 8
+          checks:
+            - {type: command, cmd: "i2cdetect -y 8"}
+          expected_addresses: ["0x0c", "0x20", "0x53", "0x56", "0x57"]
+          recovery_actions: []
+        - name: BMC I2C-9 GPIO bank
+          bus_number: 9
+          checks:
+            - {type: command, cmd: "i2cdetect -y 9"}
+          expected_addresses: ["0x20", "0x21", "0x22", "0x23", "0x24", "0x25", "0x26", "0x27"]
+          recovery_actions: []
+        - name: BMC I2C-10
+          bus_number: 10
+          checks:
+            - {type: command, cmd: "i2cdetect -y 10"}
+          expected_addresses: ["0x30", "0x48", "0x50"]
+          recovery_actions: []
+        - name: BMC I2C-14
+          bus_number: 14
+          checks:
+            - {type: command, cmd: "i2cdetect -y 14"}
+          expected_addresses: ["0x23", "0x50"]
+          recovery_actions: []
+        - name: BMC I2C-15
+          bus_number: 15
+          checks:
+            - {type: command, cmd: "i2cdetect -y 15"}
+          expected_addresses: ["0x20", "0x21", "0x23", "0x27", "0x2f", "0x42", "0x46", "0x50"]
+          recovery_actions: []
+        - name: BMC I2C-16 mux window
+          bus_number: 16
+          checks:
+            - {type: command, cmd: "i2cdetect -y 16"}
+          expected_addresses: ["0x70", "0x71", "0x72"]
+          recovery_actions: []
+        - name: BMC I2C-17 mux window
+          bus_number: 17
+          checks:
+            - {type: command, cmd: "i2cdetect -y 17"}
+          expected_addresses: ["0x70", "0x71", "0x72"]
+          recovery_actions: []
+      # bus_map and expected_devices are supplied from the existing JSON files
+      # by the compatibility adapter when not explicitly populated here.
+
+    inventory:
+      redfish_paths:
+        - /Systems/system
+        - /Chassis/chassis
+        - /Managers/bmc
+      fru_commands:
+        - TODO_MGX_ARC_FRU_COMMAND
+      # WAT PowerCycling per-cycle inventory (not Redfish FRU).
+      os_inv:
+        description: "MGX ARC inventory test [lspci, lsusb, nvme]"
+        commands:
+          - lspci
+          - lsusb
+          - nvme --list
+      bmc_inv:
+        description: "BMC inventory test [lsusb, i2c scan and detect]"
+        commands:
+          - lsusb
+          - lsusb -tv
+          - i2cdetect -y <bus>
+
+    firmware:
+      expected_components:
+        - bmc
+        - sbios
+        - fpga
+        - mcu
+        - TODO_MGX_ARC_OPTIONAL_FIRMWARE_COMPONENT
+
+    recovery:
+      enabled: false
+      modules:
+        - id: TODO_MGX_ARC_MCU_MODULE
+          enabled: false
+          steps:
+            - type: command
+              cmd: TODO_MGX_ARC_APPROVED_RECOVERY_COMMAND

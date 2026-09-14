@@ -1,0 +1,46 @@
+version: 1
+
+credentials:
+  arc-bmc:
+    username_env: MGX_ARC_BMC_USERNAME
+    password_env: MGX_ARC_BMC_PASSWORD
+  arc-host:
+    username_env: MGX_ARC_HOST_USERNAME
+    password_env: MGX_ARC_HOST_PASSWORD
+
+# Optional. Set each system's jump_host_ref to lab-jump only after replacing
+# these placeholders and adding an environment-backed jump credential.
+jump_hosts:
+  lab-jump:
+    host: TODO_MGX_ARC_JUMP_HOSTNAME
+    credential_ref: TODO_MGX_ARC_JUMP_CREDENTIAL_REF
+    port: 22
+
+systems:
+  - id: arc-2u2n-node-a
+    chassis_id: TODO_MGX_ARC_CHASSIS_ID
+    node_id: node-a
+    label: MGX ARC 2U2N Node A
+    bmc_host: TODO_MGX_ARC_NODE_A_BMC_HOST
+    os_host: TODO_MGX_ARC_NODE_A_OS_HOST
+    credential_ref: arc-bmc
+    host_credential_ref: arc-host
+    jump_host_ref: null
+    tags: [2U2N, sample]
+    revision: TODO_MGX_ARC_NODE_A_REVISION
+    expected_profile: mgx-arc-2u2n
+    capability_profile: mgx-arc-default
+
+  - id: arc-2u2n-node-b
+    chassis_id: TODO_MGX_ARC_CHASSIS_ID
+    node_id: node-b
+    label: MGX ARC 2U2N Node B
+    bmc_host: TODO_MGX_ARC_NODE_B_BMC_HOST
+    os_host: TODO_MGX_ARC_NODE_B_OS_HOST
+    credential_ref: arc-bmc
+    host_credential_ref: arc-host
+    jump_host_ref: null
+    tags: [2U2N, sample]
+    revision: TODO_MGX_ARC_NODE_B_REVISION
+    expected_profile: mgx-arc-2u2n
+    capability_profile: mgx-arc-default

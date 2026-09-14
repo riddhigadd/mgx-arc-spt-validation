@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MGX ARC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="stylesheet" href="/static/css/health-console.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">MGX</span>
+      <span class="brand-name">ARC</span>
+      <span class="brand-sub">System Test &amp; Management Console</span>
+    </div>
+    <div class="topbar-actions">
+      <div class="console-mode-switch" aria-label="Console mode">
+        <button id="direct-console-btn" type="button" class="console-mode active">Direct Connect</button>
+        <button id="health-console-btn" type="button" class="console-mode">Fleet Health</button>
+      </div>
+      <span id="conn-pill" class="pill pill-idle">Not connected</span>
+    </div>
+  </header>
+
+  <div id="notify-banner" class="notify-banner hidden" role="alert" aria-live="assertive">
+    <div class="notify-banner-inner">
+      <span id="notify-banner-icon" class="notify-banner-icon" aria-hidden="true"></span>
+      <div class="notify-banner-content">
+        <strong id="notify-banner-title" class="notify-banner-title"></strong>
+        <span id="notify-banner-msg" class="notify-banner-msg"></span>
+      </div>
+      <button id="notify-banner-close" type="button" class="notify-banner-close" aria-label="Dismiss">×</button>
+    </div>
+  </div>
+
+  <div class="layout layout-full">
+    <main class="main">
+      <!-- Login -->
+      <section id="login-view" class="login-view">
+        <div class="login-hero">
+          <img class="empty-icon" src="/static/img/nvidia-eye.svg" alt="" />
+          <h2>Connect to MGX ARC</h2>
+          <p class="login-sub">Enter the BMC address and your credentials to manage power, firmware, and flashing.</p>
+        </div>
+
+        <div class="card connect-panel login-card">
+          <div class="connect-fields connect-fields-stack">
+            <label>BMC address
+              <input type="text" id="bmc-ip" placeholder="e.g. 10.x.x.x" required autocomplete="off" />
+            </label>
+            <label>Username
+              <input type="text" id="bmc-user" placeholder="Username" required autocomplete="username" />
+            </label>
+            <label>Password
+              <input type="password" id="bmc-pass" placeholder="Password" required autocomplete="current-password" />
+            </label>
+          </div>
+          <div class="login-actions">
+            <button id="bmc-gui-login-btn" type="button" class="btn btn-ghost">BMC GUI</button>
+            <button id="connect-btn" class="btn btn-primary">Connect</button>
+          </div>
+          <div id="connect-msg" class="msg hidden"></div>
+        </div>
+      </section>
+
+      <!-- Dashboard -->
+      <section id="dashboard-view" class="dashboard-view hidden">
+        <div class="system-header">
+          <div>
+            <h1 id="sv-name">—</h1>
+            <p id="sv-version" class="muted system-version"></p>
+            <p id="sv-ip" class="muted system-version"></p>
+          </div>
+          <div class="system-header-actions">
+            <span id="sv-status" class="pill pill-idle">Disconnected</span>
+            <button id="bmc-gui-btn" type="button" class="btn btn-ghost">BMC GUI</button>
+            <button id="os-ip-detect-btn" type="button" class="btn btn-ghost">OS IP Detect</button>
+            <button id="disconnect-btn" class="btn btn-ghost">Disconnect</button>
+            <button id="refresh-btn" class="btn btn-ghost">Refresh</button>
+          </div>
+        </div>
+
+        <nav id="tabs" class="tabs">
+          <button class="tab active" data-tab="overview">Overview</button>
+          <button class="tab" data-tab="power">Power</button>
+          <button class="tab" data-tab="firmware">Firmware</button>
+          <button class="tab" data-tab="flash">Flash</button>
+          <button class="tab" data-tab="shell">BMC Shell</button>
+          <button class="tab" data-tab="spi">SPI Read</button>
+          <button class="tab" data-tab="i2c">I2C</button>
+          <button class="tab" data-tab="usb">USB Enum</button>
+          <button class="tab" data-tab="pcie">PCIe</button>
+          <button class="tab" data-tab="kvm">KVM</button>
+          <button class="tab" data-tab="scope">Scope</button>
+        </nav>
+
+        <div id="panel-overview" class="tab-panel"></div>
+        <div id="panel-power" class="tab-panel hidden"></div>
+        <div id="panel-firmware" class="tab-panel hidden"></div>
+        <div id="panel-flash" class="tab-panel hidden"></div>
+        <div id="panel-shell" class="tab-panel hidden"></div>
+        <div id="panel-spi" class="tab-panel hidden"></div>
+        <div id="panel-i2c" class="tab-panel hidden"></div>
+        <div id="panel-usb" class="tab-panel hidden"></div>
+        <div id="panel-pcie" class="tab-panel hidden"></div>
+        <div id="panel-kvm" class="tab-panel hidden"></div>
+        <div id="panel-scope" class="tab-panel hidden"></div>
+      </section>
+
+      <!-- Configuration-driven fleet health console -->
+      <section id="health-console-view" class="health-console-view hidden" aria-label="Fleet health console">
+        <div class="health-header">
+          <div>
+            <h1>Fleet Health Console</h1>
+            <p class="muted">Configuration-backed health, inventory, recovery, and issue workflows.</p>
+          </div>
+          <div class="health-header-actions">
+            <label for="health-target-select">Selected target</label>
+            <select id="health-target-select" aria-label="Selected target"></select>
+            <button id="health-refresh-btn" type="button" class="btn btn-ghost">Refresh</button>
+            <span id="health-api-status" class="hc-badge hc-not-configured">Checking</span>
+          </div>
+        </div>
+
+        <nav id="health-tabs" class="tabs health-tabs" aria-label="Fleet health views">
+          <button class="tab active" data-health-tab="targets">Targets</button>
+          <button class="tab" data-health-tab="mctp">MCTP Health</button>
+          <button class="tab" data-health-tab="inventory">FRU / Inventory</button>
+          <button class="tab" data-health-tab="firmware-compare">Firmware Compare</button>
+          <button class="tab" data-health-tab="recovery">MCU Recovery</button>
+          <button class="tab" data-health-tab="snapshots-issues">Snapshots / Issues</button>
+        </nav>
+
+        <div id="health-panel-targets" class="health-tab-panel"></div>
+        <div id="health-panel-mctp" class="health-tab-panel hidden"></div>
+        <div id="health-panel-inventory" class="health-tab-panel hidden"></div>
+        <div id="health-panel-firmware-compare" class="health-tab-panel hidden"></div>
+        <div id="health-panel-recovery" class="health-tab-panel hidden"></div>
+        <div id="health-panel-snapshots-issues" class="health-tab-panel hidden"></div>
+      </section>
+    </main>
+
+    <aside id="flash-progress-panel" class="flash-progress-panel hidden" aria-label="Flash progress">
+      <div class="fpp-head">
+        <div class="fpp-head-row">
+          <h3 id="fpp-title">Flash Progress</h3>
+          <button type="button" id="fpp-close-btn" class="fpp-close" title="Hide flash progress" aria-label="Hide flash progress">×</button>
+        </div>
+        <p id="fpp-subtitle" class="muted">Runs in the background — switch tabs freely while flashing.</p>
+      </div>
+      <div id="flash-jobs-list" class="fpp-list"></div>
+    </aside>
+  </div>
+
+  <script type="module" src="/static/js/scope-vnc.js"></script>
+  <script src="/static/js/app.js"></script>
+  <script src="/static/js/health-console.js"></script>
+</body>
+</html>

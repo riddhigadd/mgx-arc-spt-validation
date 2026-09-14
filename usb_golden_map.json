@@ -1,0 +1,213 @@
+{
+  "board": "MGX ARC HPM (P4180 / TH500 + 3× CX8)",
+  "schematic": "MGX_ARC_HPM_BD_A_V28_20260504_1500.pdf",
+  "schematic_rev": "V28 20260504",
+  "command": "lsusb && lsusb -tv",
+  "flow": "PowerCycling BMC_INV / OS_INV USB enumeration",
+  "source_capture": {
+    "host": "aerial-mgx-evt-01",
+    "bmc": "mgx-arc",
+    "date": "2026-09-03",
+    "notes": [
+      "BMC and host USB topologies are different views of the same HPM.",
+      "Do not compare host lsusb against BMC Hub-0/1/2 / MCTP devices.",
+      "BMC lsusb may prefix 'unable to initialize usb spec' on OpenBMC; parsers ignore it."
+    ]
+  },
+  "notes": [
+    "Golden map combines HPM schematic USB Hub-0/1/2 with EVT live capture (2026-09-03).",
+    "BMC view: SMSC/Microchip USB2514 hubs (0424:2514) and NVIDIA MCTP-USB (0955:ffff / 0955:cf11).",
+    "Host view: FT4232H UART, ASIX NIC, RNDIS gadget — USB-UART is host-side, not BMC-side."
+  ],
+  "expectations": {
+    "min_hubs": 3,
+    "min_devices": 4
+  },
+  "devices": [],
+  "tree": [],
+  "views": {
+    "bmc": {
+      "view": "BMC-side USB enumeration (lsusb / lsusb -tv on OpenBMC)",
+      "command": "lsusb && lsusb -tv",
+      "expectations": {
+        "min_hubs": 3,
+        "min_devices": 8
+      },
+      "devices": [
+        {
+          "id": "hub0",
+          "role": "USB Hub-0 (USB2514)",
+          "refdes": "U302",
+          "schematic_page": 20,
+          "required": true,
+          "match": ["0424:2514"],
+          "notes": "Root of BMC USB2 tree. Live: Bus 001 Dev 002, 4-port hub."
+        },
+        {
+          "id": "hub1",
+          "role": "USB Hub-1 (USB2514)",
+          "refdes": "U243",
+          "schematic_page": 205,
+          "required": true,
+          "match": ["0424:2514"],
+          "notes": "Cascaded from Hub-0 port 2. Live: Dev 004; MCU endpoints underneath."
+        },
+        {
+          "id": "hub2",
+          "role": "USB Hub-2 (USB2514)",
+          "refdes": "U387",
+          "schematic_page": 206,
+          "required": true,
+          "match": ["0424:2514"],
+          "notes": "Cascaded from Hub-0 port 3. Live: Dev 005; CPU USB leaves may be empty until host enumerates."
+        },
+        {
+          "id": "nvidia_mctp_ffff",
+          "role": "NVIDIA MCTP-USB (0955:ffff)",
+          "refdes": "Hub-0 port 1",
+          "required": true,
+          "match": ["0955:ffff"],
+          "notes": "Driver mctp-usb on BMC. PowerCycling BMC_INV USB presence check."
+        },
+        {
+          "id": "nvidia_mctp_cf11",
+          "role": "NVIDIA MCTP-USB / HID MCU (0955:cf11)",
+          "refdes": "MCU1 / MCU2 / Hub-0 port 4",
+          "required": true,
+          "match": ["0955:cf11"],
+          "notes": "Three instances on EVT: Hub-1 ports 3/4 (mctp-usb+usbhid) and Hub-0 port 4 (mctp-usb)."
+        },
+        {
+          "id": "usb_uart",
+          "role": "USB-UART bridge",
+          "refdes": "CP2108 / FT4232HQ",
+          "schematic_page": 18,
+          "required": false,
+          "match_any": true,
+          "match": ["0403:6011", "FT4232", "CP210", "FTDI"],
+          "notes": "Host-side on this EVT capture; optional on BMC."
+        },
+        {
+          "id": "ulpi_fpga",
+          "role": "FPGA ULPI PHY (TUSB1210)",
+          "refdes": "U438 / TUSB1210",
+          "schematic_page": 21,
+          "required": false,
+          "match_any": true,
+          "match": ["TUSB", "ULPI", "0421"],
+          "notes": "Optional if not visible as a USB function."
+        },
+        {
+          "id": "gnss_usb",
+          "role": "M.2 GNSS USB",
+          "refdes": "M.2 GNSS",
+          "schematic_page": 216,
+          "required": false,
+          "match_any": true,
+          "match": ["GNSS", "u-blox", "1546"],
+          "notes": "Present when GNSS module is installed."
+        }
+      ],
+      "tree": [
+        {
+          "id": "bmc_host",
+          "name": "BMC EHCI root hub (1d6b:0002)",
+          "children": [
+            {
+              "id": "hub0",
+              "name": "Hub-0 USB2514 0424:2514 (U302)",
+              "children": [
+                { "id": "nvidia_mctp_ffff", "name": "0955:ffff mctp-usb", "children": [] },
+                {
+                  "id": "hub1",
+                  "name": "Hub-1 USB2514 0424:2514 (U243)",
+                  "children": [
+                    { "id": "mcu1", "name": "0955:cf11 mctp-usb + usbhid", "children": [] },
+                    { "id": "mcu2", "name": "0955:cf11 mctp-usb + usbhid", "children": [] }
+                  ]
+                },
+                {
+                  "id": "hub2",
+                  "name": "Hub-2 USB2514 0424:2514 (U387)",
+                  "children": []
+                },
+                { "id": "hub0_p4", "name": "0955:cf11 mctp-usb", "children": [] }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "os": {
+      "view": "Host OS USB enumeration (lsusb on Grace/TH500)",
+      "command": "lsusb",
+      "expectations": {
+        "min_hubs": 2,
+        "min_devices": 5
+      },
+      "devices": [
+        {
+          "id": "os_usb2_root",
+          "role": "USB 2.0 root hub",
+          "required": true,
+          "match": ["1d6b:0002"],
+          "notes": "Linux Foundation 2.0 root hub."
+        },
+        {
+          "id": "os_usb3_root",
+          "role": "USB 3.0 root hub",
+          "required": true,
+          "match": ["1d6b:0003"],
+          "notes": "Linux Foundation 3.0 root hub (Renesas uPD720201 on PCI)."
+        },
+        {
+          "id": "os_asix",
+          "role": "ASIX AX88179 management NIC",
+          "required": true,
+          "match": ["0b95:1790"],
+          "notes": "Host debug/management Ethernet. Live: Bus 001 Dev 003."
+        },
+        {
+          "id": "usb_uart",
+          "role": "FT4232H Quad USB-UART",
+          "refdes": "FT4232HQ",
+          "schematic_page": 18,
+          "required": true,
+          "match_any": true,
+          "match": ["0403:6011", "FT4232"],
+          "notes": "Host-side UART. PowerCycling OS_INV lsusb check."
+        },
+        {
+          "id": "os_virtual_hub",
+          "role": "USB virtual hub",
+          "required": false,
+          "match": ["1d6b:0107"],
+          "notes": "Linux Foundation USB Virtual Hub — present on EVT host."
+        },
+        {
+          "id": "os_rndis",
+          "role": "USB Ethernet/RNDIS gadget",
+          "required": false,
+          "match": ["0525:a4a2"],
+          "notes": "Host-side gadget (often BMC/host USB net). Optional."
+        }
+      ],
+      "tree": [
+        {
+          "id": "os_usb",
+          "name": "Host OS USB",
+          "children": [
+            { "id": "os_usb2_root", "name": "1d6b:0002 USB 2.0 root hub", "children": [
+              { "id": "os_asix", "name": "0b95:1790 ASIX AX88179", "children": [] },
+              { "id": "usb_uart", "name": "0403:6011 FT4232H USB-UART", "children": [] },
+              { "id": "os_virtual_hub", "name": "1d6b:0107 USB Virtual Hub", "children": [
+                { "id": "os_rndis", "name": "0525:a4a2 RNDIS gadget", "children": [] }
+              ]}
+            ]},
+            { "id": "os_usb3_root", "name": "1d6b:0003 USB 3.0 root hub", "children": [] }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+Firmware Part,Redfish Inventory ID,Notes
+BMC,FW_BMC_0,Full mgxa version string from Redfish FirmwareInventory
+Host boot firmware (SBIOS/UEFI),FW_CPU_0,Falls back to host dmidecode -t 45 if host IP is set
+ERoT,FW_ERoT_CPU_0,
+FPGA / SMR,FW_FPGA_0,
+CX8 0,FW_CX8_0,
+CX8 1,FW_CX8_1,
+CX8 2,FW_CX8_2,
+GPU VBIOS / GPU Firmware,FW_GPU_0,
+GPU MCU,FW_GPU_SMA_0,GPU-side MCU firmware
+HPM MCU 0,FW_HPM_SMA_0,
+HPM MCU 1,FW_HPM_SMA_1,

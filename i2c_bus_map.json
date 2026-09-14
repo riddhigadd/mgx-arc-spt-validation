@@ -1,0 +1,103 @@
+{
+  "board": "MGX ARC HPM",
+  "flow": "PowerCycling BMC_INV i2c scan and detect",
+  "source_capture": {
+    "bmc": "mgx-arc",
+    "date": "2026-09-03",
+    "command": "i2cdetect -y <bus>"
+  },
+  "notes": [
+    "Bus numbers and presence come from EVT BMC i2cdetect on 2026-09-03.",
+    "Role names are descriptive, not schematic refdes, until the HPM I2C map is locked.",
+    "Bus 11 is absent (/dev/i2c-11 does not exist). Buses 2, 3, 12, 13 scanned empty.",
+    "Do not add mux selection commands until the board-approved BMC command is known."
+  ],
+  "buses": {
+    "0": {
+      "name": "BMC I2C-0",
+      "subsystem": "BMC",
+      "description": "Kernel-claimed 0x10 only on EVT."
+    },
+    "1": {
+      "name": "BMC I2C-1",
+      "subsystem": "Baseboard",
+      "description": "Responders 0x0b, 0x11, 0x14, 0x60."
+    },
+    "2": {
+      "name": "BMC I2C-2",
+      "subsystem": "Baseboard",
+      "description": "Empty on EVT capture."
+    },
+    "3": {
+      "name": "BMC I2C-3",
+      "subsystem": "Baseboard",
+      "description": "Empty on EVT capture."
+    },
+    "4": {
+      "name": "BMC I2C-4",
+      "subsystem": "Baseboard",
+      "description": "EEPROM/claimed 0x50, 0x57, claimed 0x6f."
+    },
+    "5": {
+      "name": "BMC I2C-5",
+      "subsystem": "Baseboard",
+      "description": "Claimed GPIO/EEPROM/mux cluster 0x20, 0x50, 0x70-0x72."
+    },
+    "6": {
+      "name": "BMC I2C-6",
+      "subsystem": "Baseboard",
+      "description": "0x20, 0x24 plus claimed 0x50."
+    },
+    "7": {
+      "name": "BMC I2C-7",
+      "subsystem": "Baseboard",
+      "description": "Claimed 0x18/0x73, plus 0x53 and 0x6a."
+    },
+    "8": {
+      "name": "BMC I2C-8",
+      "subsystem": "Baseboard",
+      "description": "0x0c, claimed 0x20/0x56/0x57, plus 0x53."
+    },
+    "9": {
+      "name": "BMC I2C-9 GPIO bank",
+      "subsystem": "Baseboard",
+      "description": "Claimed 0x20-0x27 (typical expander/mux window)."
+    },
+    "10": {
+      "name": "BMC I2C-10",
+      "subsystem": "Baseboard",
+      "description": "0x30 plus claimed 0x48 and 0x50."
+    },
+    "12": {
+      "name": "BMC I2C-12",
+      "subsystem": "Baseboard",
+      "description": "Empty on EVT capture."
+    },
+    "13": {
+      "name": "BMC I2C-13",
+      "subsystem": "Baseboard",
+      "description": "Empty on EVT capture."
+    },
+    "14": {
+      "name": "BMC I2C-14",
+      "subsystem": "Baseboard",
+      "description": "0x23 plus claimed 0x50."
+    },
+    "15": {
+      "name": "BMC I2C-15",
+      "subsystem": "Baseboard",
+      "description": "Mixed claimed/unclaimed 0x20-0x2f, 0x42, 0x46, 0x50."
+    },
+    "16": {
+      "name": "BMC I2C-16 mux window",
+      "subsystem": "Baseboard",
+      "description": "Claimed 0x70-0x72 (typical PCA954x)."
+    },
+    "17": {
+      "name": "BMC I2C-17 mux window",
+      "subsystem": "Baseboard",
+      "description": "Claimed 0x70-0x72 (typical PCA954x)."
+    }
+  },
+  "mux_paths": []
+}

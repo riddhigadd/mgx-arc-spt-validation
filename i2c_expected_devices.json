@@ -1,0 +1,95 @@
+{
+  "source_capture": {
+    "bmc": "mgx-arc",
+    "date": "2026-09-03",
+    "flow": "PowerCycling BMC_INV i2c scan and detect"
+  },
+  "notes": [
+    "Addresses are what i2cdetect reported (hex digit = ACK, UU = kernel-claimed).",
+    "Names are EVT-observed placeholders, not locked schematic roles."
+  ],
+  "buses": {
+    "0": [
+      {
+        "address": "0x10",
+        "name": "Claimed device 0x10",
+        "description": "UU on EVT bus 0"
+      }
+    ],
+    "1": [
+      { "address": "0x0b", "name": "Device 0x0b", "description": "ACK on EVT bus 1" },
+      { "address": "0x11", "name": "Device 0x11", "description": "ACK on EVT bus 1" },
+      { "address": "0x14", "name": "Device 0x14", "description": "ACK on EVT bus 1" },
+      { "address": "0x60", "name": "Device 0x60", "description": "ACK on EVT bus 1" }
+    ],
+    "4": [
+      { "address": "0x50", "name": "EEPROM 0x50", "description": "UU on EVT bus 4" },
+      { "address": "0x57", "name": "Device 0x57", "description": "ACK on EVT bus 4" },
+      { "address": "0x6f", "name": "Claimed device 0x6f", "description": "UU on EVT bus 4" }
+    ],
+    "5": [
+      { "address": "0x20", "name": "Claimed 0x20", "description": "UU on EVT bus 5" },
+      { "address": "0x50", "name": "EEPROM 0x50", "description": "UU on EVT bus 5" },
+      { "address": "0x70", "name": "Mux/claimed 0x70", "description": "UU on EVT bus 5" },
+      { "address": "0x71", "name": "Mux/claimed 0x71", "description": "UU on EVT bus 5" },
+      { "address": "0x72", "name": "Mux/claimed 0x72", "description": "UU on EVT bus 5" }
+    ],
+    "6": [
+      { "address": "0x20", "name": "Device 0x20", "description": "ACK on EVT bus 6" },
+      { "address": "0x24", "name": "Device 0x24", "description": "ACK on EVT bus 6" },
+      { "address": "0x50", "name": "EEPROM 0x50", "description": "UU on EVT bus 6" }
+    ],
+    "7": [
+      { "address": "0x18", "name": "Claimed 0x18", "description": "UU on EVT bus 7" },
+      { "address": "0x53", "name": "Device 0x53", "description": "ACK on EVT bus 7" },
+      { "address": "0x6a", "name": "Device 0x6a", "description": "ACK on EVT bus 7" },
+      { "address": "0x73", "name": "Claimed 0x73", "description": "UU on EVT bus 7" }
+    ],
+    "8": [
+      { "address": "0x0c", "name": "Device 0x0c", "description": "ACK on EVT bus 8" },
+      { "address": "0x20", "name": "Claimed 0x20", "description": "UU on EVT bus 8" },
+      { "address": "0x53", "name": "Device 0x53", "description": "ACK on EVT bus 8" },
+      { "address": "0x56", "name": "Claimed 0x56", "description": "UU on EVT bus 8" },
+      { "address": "0x57", "name": "Claimed 0x57", "description": "UU on EVT bus 8" }
+    ],
+    "9": [
+      { "address": "0x20", "name": "Claimed 0x20", "description": "UU GPIO/expander window" },
+      { "address": "0x21", "name": "Claimed 0x21", "description": "UU GPIO/expander window" },
+      { "address": "0x22", "name": "Claimed 0x22", "description": "UU GPIO/expander window" },
+      { "address": "0x23", "name": "Claimed 0x23", "description": "UU GPIO/expander window" },
+      { "address": "0x24", "name": "Claimed 0x24", "description": "UU GPIO/expander window" },
+      { "address": "0x25", "name": "Claimed 0x25", "description": "UU GPIO/expander window" },
+      { "address": "0x26", "name": "Claimed 0x26", "description": "UU GPIO/expander window" },
+      { "address": "0x27", "name": "Claimed 0x27", "description": "UU GPIO/expander window" }
+    ],
+    "10": [
+      { "address": "0x30", "name": "Device 0x30", "description": "ACK on EVT bus 10" },
+      { "address": "0x48", "name": "Claimed 0x48", "description": "UU on EVT bus 10" },
+      { "address": "0x50", "name": "EEPROM 0x50", "description": "UU on EVT bus 10" }
+    ],
+    "14": [
+      { "address": "0x23", "name": "Device 0x23", "description": "ACK on EVT bus 14" },
+      { "address": "0x50", "name": "EEPROM 0x50", "description": "UU on EVT bus 14" }
+    ],
+    "15": [
+      { "address": "0x20", "name": "Device 0x20", "description": "ACK on EVT bus 15" },
+      { "address": "0x21", "name": "Claimed 0x21", "description": "UU on EVT bus 15" },
+      { "address": "0x23", "name": "Claimed 0x23", "description": "UU on EVT bus 15" },
+      { "address": "0x27", "name": "Claimed 0x27", "description": "UU on EVT bus 15" },
+      { "address": "0x2f", "name": "Device 0x2f", "description": "ACK on EVT bus 15" },
+      { "address": "0x42", "name": "Claimed 0x42", "description": "UU on EVT bus 15" },
+      { "address": "0x46", "name": "Claimed 0x46", "description": "UU on EVT bus 15" },
+      { "address": "0x50", "name": "EEPROM 0x50", "description": "UU on EVT bus 15" }
+    ],
+    "16": [
+      { "address": "0x70", "name": "Mux 0x70", "description": "UU on EVT bus 16" },
+      { "address": "0x71", "name": "Mux 0x71", "description": "UU on EVT bus 16" },
+      { "address": "0x72", "name": "Mux 0x72", "description": "UU on EVT bus 16" }
+    ],
+    "17": [
+      { "address": "0x70", "name": "Mux 0x70", "description": "UU on EVT bus 17" },
+      { "address": "0x71", "name": "Mux 0x71", "description": "UU on EVT bus 17" },
+      { "address": "0x72", "name": "Mux 0x72", "description": "UU on EVT bus 17" }
+    ]
+  }
+}

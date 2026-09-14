@@ -1,0 +1,28 @@
+[Unit]
+Description=MGX ARC GUI (Flask / Gunicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nvidia
+Group=nvidia
+WorkingDirectory=/opt/mgx-arc-gui
+Environment=PORT=4281
+Environment=PATH=/opt/mgx-arc-gui/.venv/bin:/usr/local/bin:/usr/bin
+ExecStart=/opt/mgx-arc-gui/.venv/bin/gunicorn \
+  --bind 0.0.0.0:4281 \
+  --workers 2 \
+  --threads 8 \
+  --timeout 900 \
+  --access-logfile - \
+  --error-logfile - \
+  wsgi:app
+Restart=always
+RestartSec=3
+
+# Long flash / SPI reads need a long request timeout
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

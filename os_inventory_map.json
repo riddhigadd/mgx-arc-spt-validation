@@ -1,0 +1,76 @@
+{
+  "board": "MGX ARC HPM (P4180 / TH500 + 3× CX8)",
+  "flow": "PowerCycling OS_INV",
+  "source_capture": {
+    "host": "aerial-mgx-evt-01",
+    "date": "2026-09-03",
+    "user": "aerial"
+  },
+  "notes": [
+    "Matches WAT PowerCycling OS_INV: lspci, lsusb, nvme --list.",
+    "Do not require exact BDFs; match class/description substrings and minimum counts.",
+    "CX8: 10 Ethernet functions (2 + 4 + 4) on EVT. GPU NVIDIA Device 2c3a. Boot NVMe SSSTC PJ1-GW960P."
+  ],
+  "commands": {
+    "lspci": "lspci",
+    "lshw_network": "lshw -c network -businfo",
+    "nvme": "nvme --list"
+  },
+  "pcie": {
+    "min_devices": 20,
+    "required": [
+      {
+        "id": "nvidia_root_ports",
+        "role": "NVIDIA TH500/Grace PCI bridges",
+        "match_any": true,
+        "match": ["Device 22b1", "Device 22b2", "Device 22b8", "Device 22b9"],
+        "min_count": 4
+      },
+      {
+        "id": "cx8",
+        "role": "ConnectX-8 Ethernet functions",
+        "match_any": true,
+        "match": ["ConnectX-8", "CX8 Family"],
+        "min_count": 10
+      },
+      {
+        "id": "gpu",
+        "role": "NVIDIA GPU 3D controller",
+        "match_any": true,
+        "match": ["2c3a", "3D controller"],
+        "min_count": 1
+      },
+      {
+        "id": "nvme_controller",
+        "role": "NVMe controller",
+        "match_any": true,
+        "match": ["Non-Volatile memory", "100d"],
+        "min_count": 1
+      },
+      {
+        "id": "aspeed",
+        "role": "ASPEED BMC VGA / P2P bridge",
+        "match": ["ASPEED"],
+        "min_count": 1
+      },
+      {
+        "id": "renesas_xhci",
+        "role": "Renesas USB 3.0 host",
+        "match_any": true,
+        "match": ["uPD720201", "USB controller"],
+        "min_count": 1
+      }
+    ]
+  },
+  "nvme": {
+    "min_namespaces": 1,
+    "required": [
+      {
+        "id": "boot_ssd",
+        "role": "Boot NVMe SSSTC PJ1-GW960P",
+        "match_any": true,
+        "match": ["SSSTC", "PJ1-GW960P", "nvme0n1"]
+      }
+    ]
+  }
+}

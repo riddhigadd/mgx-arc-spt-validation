@@ -1,0 +1,70 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.cover
+
+# Environment & secrets
+.env
+.env.*
+.flaskenv
+*.pem
+*.key
+credentials/
+credentials.json
+secrets/
+
+# Local runtime data
+*.db
+*.sqlite3
+data/*.db
+data/*.sqlite3
+systems.json
+deploy_backup/
+
+# Firmware binaries (large; use firmware_images/README.txt)
+firmware_images/*.image
+firmware_images/*.img
+firmware_images/*.bin
+firmware_images/*.fwpkg
+firmware_images/*.zip
+!firmware_images/README.txt
+
+# IDE & editor
+.cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS & sync artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+~$*
+*.lnk
+
+# OneDrive conflict / sync copies
+*conflict*
+*Conflict*
+* (Copy)*
+
+# Node (if added later)
+node_modules/
+
+# Logs
+*.log
+logs/

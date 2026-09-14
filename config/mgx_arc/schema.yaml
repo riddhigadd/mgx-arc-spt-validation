@@ -1,0 +1,118 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: mgx-arc-config-v1
+title: MGX ARC health-console configuration
+type: object
+required: [version, credentials, capability_profiles, systems, profiles]
+additionalProperties: false
+properties:
+  version:
+    const: 1
+  credentials:
+    type: object
+    additionalProperties:
+      type: object
+      required: [username_env, password_env]
+      additionalProperties: false
+      properties:
+        username_env:
+          type: string
+          pattern: "^[A-Za-z_][A-Za-z0-9_]*$"
+        password_env:
+          type: string
+          pattern: "^[A-Za-z_][A-Za-z0-9_]*$"
+  jump_hosts:
+    type: object
+    additionalProperties:
+      type: object
+      required: [host, credential_ref]
+      additionalProperties: false
+      properties:
+        host: {type: string}
+        credential_ref: {type: string}
+        port: {type: integer, minimum: 1, maximum: 65535}
+  capability_profiles:
+    type: object
+    additionalProperties:
+      type: object
+      additionalProperties: false
+      properties:
+        redfish_power: {type: boolean}
+        graceful_shutdown: {type: boolean}
+        ac_cycle: {type: boolean}
+        usb_sources:
+          type: array
+          uniqueItems: true
+          items: {enum: [bmc, host]}
+        mctp: {type: boolean}
+        i2c: {type: boolean}
+        fru_redfish: {type: boolean}
+        fru_ipmi: {type: boolean}
+        mcu_recovery: {type: boolean}
+  systems:
+    type: array
+    items:
+      type: object
+      required:
+        - id
+        - chassis_id
+        - node_id
+        - bmc_host
+        - os_host
+        - credential_ref
+        - expected_profile
+        - capability_profile
+      additionalProperties: false
+      properties:
+        id: {$ref: "#/$defs/id"}
+        chassis_id: {type: string}
+        node_id: {type: string}
+        label: {type: string}
+        bmc_host: {type: string}
+        os_host: {type: string}
+        credential_ref: {$ref: "#/$defs/id"}
+        host_credential_ref:
+          anyOf:
+            - {$ref: "#/$defs/id"}
+            - {type: "null"}
+        jump_host_ref:
+          anyOf:
+            - {$ref: "#/$defs/id"}
+            - {type: "null"}
+        tags:
+          type: array
+          items: {type: string}
+        revision: {type: string}
+        expected_profile: {$ref: "#/$defs/id"}
+        capability_profile: {$ref: "#/$defs/id"}
+  profiles:
+    type: object
+    additionalProperties:
+      type: object
+      required: [commands, usb, mctp, i2c, inventory, firmware, recovery]
+      properties:
+        commands:
+          type: object
+          required: [usb, mctp, i2c_health, recovery]
+          additionalProperties: false
+          properties:
+            usb:
+              type: object
+              required: [bmc, host]
+              additionalProperties: false
+              properties:
+                bmc: {type: string}
+                host: {type: string}
+            mctp: {type: string}
+            i2c_health: {type: string}
+            recovery: {type: string}
+        usb: {type: object}
+        mctp: {type: object}
+        i2c: {type: object}
+        inventory: {type: object}
+        firmware: {type: object}
+        recovery: {type: object}
+      additionalProperties: false
+$defs:
+  id:
+    type: string
+    pattern: "^[A-Za-z0-9._-]+$"

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Neon NVIDIA-eye inspired mark for the GUI background -->
+  <defs>
+    <filter id="neon" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="9" result="softGlow"/>
+      <feGaussianBlur stdDeviation="3" result="sharpGlow"/>
+      <feMerge>
+        <feMergeNode in="softGlow"/>
+        <feMergeNode in="sharpGlow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="greenBeam" x1="94" y1="256" x2="434" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00ff9c"/>
+      <stop offset="0.45" stop-color="#aaff00"/>
+      <stop offset="1" stop-color="#52ff00"/>
+    </linearGradient>
+    <radialGradient id="core" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(255 259) rotate(90) scale(132 176)">
+      <stop offset="0" stop-color="#d8ff62" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#76b900" stop-opacity="0.36"/>
+      <stop offset="1" stop-color="#00ff9c" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="255" cy="259" rx="176" ry="132" fill="url(#core)"/>
+
+  <g filter="url(#neon)" stroke="url(#greenBeam)" stroke-linecap="round" stroke-linejoin="round">
+    <!-- square tail -->
+    <path d="M286 159h91v194h-91" stroke-width="24"/>
+
+    <!-- eye outline -->
+    <path d="M100 256c58-75 119-113 185-113 69 0 119 39 158 113-39 74-89 113-158 113-66 0-127-38-185-113Z" stroke-width="22"/>
+
+    <!-- nested orbital lines -->
+    <path d="M145 256c42-50 89-75 140-75 49 0 88 25 119 75-31 50-70 75-119 75-51 0-98-25-140-75Z" stroke-width="14"/>
+    <path d="M190 256c29-31 61-47 95-47 31 0 58 16 80 47-22 31-49 47-80 47-34 0-66-16-95-47Z" stroke-width="12"/>
+
+    <!-- center divider and pupil -->
+    <path d="M256 140v232" stroke-width="13"/>
+    <circle cx="256" cy="256" r="40" stroke-width="15"/>
+
+    <!-- loose plasma streaks inspired by the reference glow -->
+    <path d="M65 189c48-21 85-16 126 17" stroke-width="8" opacity="0.55"/>
+    <path d="M80 325c43 18 83 12 126-21" stroke-width="8" opacity="0.5"/>
+    <path d="M165 111c53 8 96 29 131 64" stroke-width="7" opacity="0.35"/>
+  </g>
+</svg>
