@@ -1,6 +1,8 @@
 # Deploying MGX ARC GUI
 
-Guide for running the GUI on **any Linux server** (lab VM, workstation, DGX, cloud instance, etc.) with a persistent systemd service.
+> **Primary guide:** For NVIDIA ITSS VM production deployment (HTTPS, SSO planning, org repo), use **[DEPLOYMENT.md](../DEPLOYMENT.md)** at the repository root.
+
+This document adds **supplementary** detail for running the GUI on **any Linux server** (lab VM, workstation, DGX, cloud instance, etc.) with a persistent systemd service.
 
 | Item | Typical value |
 | ---- | ------------- |

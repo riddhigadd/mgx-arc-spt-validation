@@ -18,6 +18,7 @@ htmlcov/
 # Environment & secrets
 .env
 .env.*
+!.env.example
 .flaskenv
 *.pem
 *.key

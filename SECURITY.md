@@ -46,7 +46,7 @@ These are **not production secrets** — they are common defaults on lab OpenBMC
 
 ## Reporting vulnerabilities
 
-If you discover a security issue, please report it privately to the repository maintainer rather than opening a public issue with exploit details.
+If you discover a security issue, please report it privately to the repository maintainer (NVIDIA Platform/Lab team TBD — see [HANDOFF.md](HANDOFF.md)) rather than opening a public issue with exploit details.
 
 ## Responsible use checklist
 

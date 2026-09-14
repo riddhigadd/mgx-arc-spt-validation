@@ -4,9 +4,32 @@ A web dashboard for connecting to and managing **MGX ARC** systems. The app is a
 
 Built with **Flask** (Python) and **vanilla JavaScript** — no frontend build step required.
 
-## Quick start (local or any server)
+**Original author:** [Riddhi Gaddamwar](AUTHORS)  
+**Maintainer:** TBD (NVIDIA Platform/Lab team)
 
-Clone the repo, create a virtual environment, install dependencies, and run:
+---
+
+## Handoff and production deployment
+
+This repository is prepared for **internal NVIDIA ownership** on an **ITSS Linux VM** with HTTPS and SSO (OIDC PKCE). The source currently lives on transitional personal GitHub and should move to an **NVIDIA GitLab group**.
+
+| Document | Purpose |
+| -------- | ------- |
+| **[HANDOFF.md](HANDOFF.md)** | Checklist for the next maintainer |
+| **[DEPLOYMENT.md](DEPLOYMENT.md)** | ITSS VM install, systemd, nginx, HTTPS |
+| **[docs/SSO.md](docs/SSO.md)** | Azure AD / ITSS OIDC registration (integration TODO in code) |
+| **[MANUAL_STEPS.md](MANUAL_STEPS.md)** | Portal-only tasks (VM, cert, repo transfer) |
+| **[SECURITY.md](SECURITY.md)** | Secrets, lab defaults, network exposure |
+
+**Who should own this:** Platform/Lab team TBD — see [HANDOFF.md](HANDOFF.md) for the full action checklist.
+
+**Repository transfer:** Clone/bootstrap may use [github.com/riddhigadd/mgx-arc-spt-validation](https://github.com/riddhigadd/mgx-arc-spt-validation) until the org GitLab remote is ready; long-term maintainership must not depend on a personal account.
+
+---
+
+## Quick start (developers)
+
+Local development is secondary to production deploy. For a laptop or lab workstation:
 
 ```powershell
 git clone https://github.com/riddhigadd/mgx-arc-spt-validation.git
@@ -28,26 +51,13 @@ python app.py
 
 Open **http://localhost:4282/** (default dev port), enter the BMC address and credentials, and connect.
 
-For production on a server, use **gunicorn** and a process manager (systemd). See **[deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)**.
+Copy [`.env.example`](.env.example) to `.env` for Fleet Health credentials and future SSO settings.
 
-## Deploy anywhere
+For production on an ITSS VM, follow **[DEPLOYMENT.md](DEPLOYMENT.md)** (gunicorn + systemd + nginx).
 
-You can run this GUI on:
+> **Optional legacy lab instance:** http://10.110.33.21:4281/ — not required for new deployments.
 
-- Your **laptop** (development or personal use)
-- A **lab VM** or workstation
-- A **DGX Spark** or other server on your network
-- Any **Linux host** that can reach your BMC management network
-
-There is no requirement to use a shared or central host. Fork the repo, customize it, and deploy on the machine you choose.
-
-> **Example hosted instance:** One NVIDIA lab runs a shared copy at **http://10.110.33.21:4281/** — that is an optional convenience, not a requirement.
-
-## Creator
-
-**Original author:** [Riddhi Gaddamwar](AUTHORS) — MGX ARC GUI for lab bring-up, firmware management, and system validation.
-
-See [AUTHORS](AUTHORS) for attribution details.
+---
 
 ## Features
 
@@ -55,59 +65,44 @@ See [AUTHORS](AUTHORS) for attribution details.
 - **Overview** — live system summary (host name, model, BMC version, power state, kernel, uptime) via SSH.
 - **Power control** — On, Graceful Shutdown, Force Off, Restart, Power Cycle (Redfish `ComputerSystem.Reset`).
 - **Sensors** — temperatures, voltages, fans, and power draw (Redfish `Thermal` / `Power`).
-- **Firmware** — MGX ARC firmware parts from BMC Redfish `FirmwareInventory` (`FW_BMC_0`, `FW_CPU_0`, `FW_ERoT_CPU_0`, `FW_FPGA_0`, `FW_CX8_*`, `FW_GPU_*`, `FW_HPM_SMA_*`).
+- **Firmware** — MGX ARC firmware parts from BMC Redfish `FirmwareInventory`.
 - **Flash** — BMC, FML bundle, CX8, SMR/FPGA, SBIOS/UEFI, and ERoT. Place images in `firmware_images/` or upload from the GUI.
 - **I2C checks** — bus discovery, mux paths, register dump/read/write over SSH.
 - **USB / PCIe / KVM / Scope** — enumeration, inventory, console helpers, and optional lab-scope integration.
 - **Fleet Health Console** — configuration-driven health, inventory, and recovery workflows (`/api/arc`).
 
-## Contributing workflow
+---
 
-```
-Contributor → GitHub PR → review & merge to main → deploy on your host → users open your URL
-```
+## Environment variables
 
-1. Fork, branch, and open a pull request ([CONTRIBUTING.md](CONTRIBUTING.md)).
-2. Test locally with `python app.py` or deploy to your own server ([deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)).
-3. After merge, deploy updated code wherever you run the GUI and hard-refresh the browser (Ctrl+F5) for front-end changes.
+Copy [`.env.example`](.env.example) to `.env` (gitignored). Key variables:
 
-## Production deployment
+| Variable | Purpose |
+| -------- | ------- |
+| `PORT` | Listen port (`4282` dev, `4281` production) |
+| `MGX_ARC_BMC_USERNAME` / `MGX_ARC_BMC_PASSWORD` | Fleet Health BMC credentials |
+| `MGX_ARC_HOST_USERNAME` / `MGX_ARC_HOST_PASSWORD` | OS host SSH credentials |
+| `MGX_ARC_CONFIG_DIR` | Override config directory (default `config/mgx_arc/`) |
+| `MGX_ARC_DATA_DIR` | Override snapshot/store data directory |
+| `OIDC_*` | Planned SSO — see [docs/SSO.md](docs/SSO.md) |
 
-For a persistent server install (systemd, gunicorn, firewall, `PORT` env var):
+Direct Connect login uses hardcoded lab defaults in `app.py` (`root` / `0penBmc`) — change before exposing beyond a trusted lab. See [SECURITY.md](SECURITY.md).
 
-**[deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)**
+Optional tuning: `FLASH_UPLOAD_TIMEOUT`, `BMC_UPDATE_TIMEOUT`, `I2C_CMD_TIMEOUT`, `SCOPE_*` (documented in `.env.example`).
 
-### Environment variables
+See [config/mgx_arc/README.md](config/mgx_arc/README.md) for `systems.yaml`, `profiles.yaml`, and `TODO_MGX_ARC_*` placeholders.
 
-| Variable | Default | Purpose |
-| -------- | ------- | ------- |
-| `PORT` | `4282` (dev) / `4281` (systemd) | Listen port |
-| `MGX_ARC_BMC_USERNAME` | — | Fleet Health BMC username |
-| `MGX_ARC_BMC_PASSWORD` | — | Fleet Health BMC password |
-| `MGX_ARC_HOST_USERNAME` | — | OS host SSH username |
-| `MGX_ARC_HOST_PASSWORD` | — | OS host SSH password |
-| `MGX_ARC_CONFIG_DIR` | `config/mgx_arc/` | Override config directory |
-| `MGX_ARC_DATA_DIR` | — | Override snapshot/store data directory |
-
-See [config/mgx_arc/README.md](config/mgx_arc/README.md) for `systems.yaml`, `profiles.yaml`, and placeholder (`TODO_MGX_ARC_*`) workflow.
-
-### Direct Connect mode (legacy `/api/bmc` routes)
-
-The Direct Connect login validates BMC credentials server-side. Default lab OpenBMC credentials (`root` / `0penBmc`) are baked into `app.py` for convenience — **change these for your environment** before exposing the GUI beyond a trusted lab network. See [SECURITY.md](SECURITY.md).
-
-Other optional tuning variables include `FLASH_UPLOAD_TIMEOUT`, `BMC_UPDATE_TIMEOUT`, `I2C_CMD_TIMEOUT`, and `SCOPE_*` settings (documented in `app.py`).
-
-## Remote access
-
-If your GUI host is not directly reachable from your laptop, use VPN, Tailscale, or another private path to the server running the app. See **[deploy/REMOTE_ACCESS.md](deploy/REMOTE_ACCESS.md)**.
-
-## Customizing the GUI
-
-Theme colors, tabs, API routes, I2C/USB maps, and fleet profiles are customized in this repo. Test locally or on your server, then deploy wherever you run the GUI. See **[CUSTOMIZATION.md](CUSTOMIZATION.md)**.
+---
 
 ## Contributing
 
-Contributions are welcome. Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** for fork/PR workflow, code style, and what not to commit.
+```
+Contributor → PR → review & merge → deploy per DEPLOYMENT.md
+```
+
+Read **[CONTRIBUTING.md](CONTRIBUTING.md)** for fork/PR workflow and what not to commit.
+
+---
 
 ## Project layout
 
@@ -115,33 +110,33 @@ Contributions are welcome. Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** fo
 app.py                    Flask backend + Redfish/SSH proxy
 backend/                  Fleet Health API, config loader, providers
 config/mgx_arc/           YAML systems & capability profiles
-static/
-  index.html              Dashboard shell
-  css/style.css           Theme (CSS variables)
-  js/app.js               Direct Connect tabs & API calls
-  js/health-console.js    Fleet Health Console
-deploy/                   Server install, deploy scripts, and remote access docs
+static/                   Dashboard UI (HTML, CSS, JS)
+deploy/                   systemd unit, install script, remote push helper
+docs/SSO.md               OIDC integration notes
 firmware_images/          Local firmware binaries (gitignored)
-usb_golden_map.json       USB topology golden references
-i2c_bus_map.json          I2C bus names and mux paths
-i2c_expected_devices.json Expected I2C device addresses
 ```
+
+---
 
 ## Firmware images
 
-Place `.bin`, `.fwpkg`, and `.image` files in `firmware_images/` on the host running the GUI for one-click flashing. Large binaries are **gitignored** — see [firmware_images/README.txt](firmware_images/README.txt) for expected filenames.
+Place `.bin`, `.fwpkg`, and `.image` files in `firmware_images/` on the host for one-click flashing. Large binaries are **gitignored** — see [firmware_images/README.txt](firmware_images/README.txt).
 
-Run `python discover_firmware.py <BMC_IP>` from a machine with BMC network access to probe a live BMC and map firmware inventory IDs.
+Run `python discover_firmware.py <BMC_IP>` from a machine with BMC network access to map firmware inventory IDs.
+
+---
 
 ## License
 
-This project is released under the [MIT License](LICENSE).
+[MIT License](LICENSE)
+
+---
 
 ## Disclaimer
 
-**This is a lab / BMC management tool.** It is intended for use on trusted management networks with authorized hardware.
+**Lab / BMC management tool** for trusted management networks and authorized hardware.
 
-- **Do not** expose BMC management ports (SSH, Redfish) to the public internet.
-- **Do not** commit real passwords, `.env` files, or deploy credentials to version control.
+- Do not expose BMC management ports to the public internet.
+- Do not commit real passwords, `.env` files, or deploy credentials.
 
-See [SECURITY.md](SECURITY.md) for responsible use and secret handling.
+See [SECURITY.md](SECURITY.md).
